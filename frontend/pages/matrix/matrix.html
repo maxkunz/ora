@@ -1,0 +1,707 @@
+<div class="h-full w-full">
+    <!-- The matrix -->
+        <table :class="{'compact-table': $store.globalData.compactMode}"
+               class="min-w-max text-sm border-collapse w-full">
+            <thead class="">
+            <tr class="bg-gray-100">
+                <th :class="$store.globalData.compactMode ? 'w-32' : 'w-60'"
+                    class=" sticky top-0 left-0 z-30 bg-gray-100 p-2 border-r border-b text-left">
+                    <div class="flex items-center justify-between">
+                        <span class="font-semibold text-sm">Kategorie / Intention</span>
+                        <div class="burger-container">
+                            <button x-show="$store.aiAssist.show"
+                                    @click="$store.aiAssist.promptFunctionSelection(null, ['generate_categories', 'generate_concerns'])"
+                                    class="bg-[#8d8e8f] rounded-full p-1 shadow-[0_0_12px_rgba(0,0,0,1)]"
+                                    title="AI Optionen">✨
+                            </button>
+                            <span
+                                    x-show="!$store.aiAssist.show"
+                                    @click.prevent="$store.dropdownMenu.open($event, {}, 'main')"
+                                    class="burger-icon"
+                            >
+                                    ≡
+                            </span>
+
+                        </div>
+                    </div>
+                </th>
+                <template x-for="con in $store.globalData.concerns" :key="con.id">
+                    <th :class="[$store.globalData.compactMode ? 'compact-table concern-th' : '', 'sticky top-0 z-20 p-2 border-r border-b text-left', con.name.startsWith('*') ? 'bg-highlight-orange' : 'bg-gray-100']">
+                        <div class="flex items-center justify-between group">
+                            <!-- Inline rename with x-model -->
+                            <div :class="{'concern-header': $store.globalData.compactMode}" x-data="{ editing:false }"
+                                 @dblclick="editing = true"
+                                 @click.away="editing = false">
+                                <span x-show="!editing" x-text="con.name" class="font-semibold"></span>
+                                <input x-show="editing" type="text"
+                                       class="border px-1 text-xs w-auto max-w-[6rem]" x-model="con.name"/>
+                            </div>
+
+                            <div class="burger-container opacity-0 group-hover:opacity-100">
+                                <button x-show="$store.aiAssist.show"
+                                        @click="$store.aiAssist.promptFunctionSelection(con, ['generate_keywords', 'generate_phrases', 'generate_phrases_and_keywords'])"
+                                        class="bg-[#8d8e8f] rounded-full p-1 shadow-[0_0_12px_rgba(0,0,0,1)] opacity-0 group-hover:opacity-100"
+                                        title="AI Optionen">✨
+                                </button>
+                                <span
+                                        x-show="!$store.aiAssist.show"
+                                        @click.prevent="$store.dropdownMenu.open($event, con, 'th')"
+                                        class="burger-icon group-hover:block"
+                                        title="Optionen"
+                                >
+                                    ≡
+                                </span>
+
+                            </div>
+                        </div>
+                    </th>
+                </template>
+            </tr>
+            </thead>
+            <tbody>
+            <template x-for="row in $store.globalData.flattenedCategories" :key="row.obj.id">
+                <tr>
+                    <td :class="[$store.globalData.compactMode ? 'w-32' : 'w-60', 'sticky left-0 z-10 p-1 border-r border-b text-left overflow-visible relative', row.obj.name.startsWith('*') ? 'bg-highlight-orange' : 'bg-gray-100']">
+                        <div class="flex items-center justify-between group">
+                            <div class="flex items-center"
+                                 x-data="{ editing:false }"
+                                 @dblclick="editing = true"
+                                 @click.away="editing = false">
+                                <template x-if="!row.isParent">
+                                    <span class="text-gray-500 mr-1">→</span>
+                                </template>
+                                <!-- Inline rename with x-model -->
+                                <span x-show="!editing" x-text="row.obj.name" class="font-semibold"></span>
+                                <input x-show="editing" type="text" class="border px-1 text-xs"
+                                       x-model="row.obj.name"/>
+                            </div>
+
+                            <div class="burger-container relative opacity-0 group-hover:opacity-100">
+                                <button x-show="$store.aiAssist.show"
+                                        @click="$store.aiAssist.promptFunctionSelection(row.obj, ['generate_keywords', 'generate_phrases', 'generate_phrases_and_keywords', 'generate_subcategories'])"
+                                        class="bg-[#8d8e8f] rounded-full p-1 shadow-[0_0_12px_rgba(0,0,0,1)] opacity-0 group-hover:opacity-100"
+                                        title="AI Optionen">✨
+                                </button>
+
+                                <span
+                                        x-show="!$store.aiAssist.show"
+                                        @click.prevent="$store.dropdownMenu.open($event, row, 'td')"
+                                        class="burger-icon group-hover:block"
+                                        title="Optionen"
+                                >
+                                    ≡
+                                </span>
+                            </div>
+                        </div>
+                    </td>
+                    <!-- Concern-Spalte -->
+                    <template x-for="con in $store.globalData.concerns" :key="con.id">
+                        <td :class="$store.globalData.cellClasses(row.obj.id, con.id)"
+                            class="p-1 border-b border-r relative hover:shadow-md hover:z-20
+         cursor-pointer transition duration-150"
+                            x-data="{open: false, openGrp: null}"
+                            @click="$store.globalData.openRouteModal(row.obj.id, con.id, row.obj.name, con.name)">
+                            
+                            <!-- New Approach -->
+                            <div
+                                class="relative h-8 w-full max-w-32 group"
+                                >
+                                <!-- Current value (name) -->
+                                <span
+                                    class="block truncate px-2 py-1 text-s"
+                                    x-text="$store.globalData.labelForMatrixSelection(row.obj.id, con.id)"
+                                ></span>
+
+                                <!-- Hover '+' overlay only when empty -->
+                                <span
+                                    x-show="!$store.globalData.labelForMatrixSelection(row.obj.id, con.id)"
+                                    class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-gray-900"
+                                >
+                                    +
+                                </span>
+                            </div>
+                            
+                        </td>
+                    </template>
+                </tr>
+            </template>
+            </tbody>
+        </table>
+
+    <!-- Edit Category/Concern Modal -->
+    <template x-if="$store.globalData.editItem">
+        <div class="fixed inset-0 flex items-center justify-center bg-black bg-black/50 z-50">
+            <div class="bg-white rounded-lg p-6 w-[40rem] shadow-lg"
+                 x-data="{ newKeyword: '', newPhrase: '' }">
+
+                <div class="flex flex-row items-center gap-x-4">
+                    <button x-show="$store.aiAssist.show"
+                            @click="$store.aiAssist.promptFunctionSelection(editItem, ['generate_phrases', 'generate_keywords', 'generate_phrases_and_keywords'])"
+                            class="bg-[#8d8e8f] rounded-full p-1 shadow-[0_0_12px_rgba(0,0,0,1)] group-hover:opacity-100"
+                            title="AI Optionen">✨
+                    </button>
+                    <h2 class="text-lg font-semibold mb-4"
+                        x-text="$store.globalData.editType === 'category' ? 'Edit Category' : 'Edit Concern'"></h2>
+                </div>
+                <!-- NAME -->
+                <label class="text-xs font-bold block mb-1">Name</label>
+                <input type="text"
+                       class="border px-2 py-1 text-sm w-full mb-4"
+                       x-model="$store.globalData.editItem.name"
+                       @focus="if ($store.globalData.editItem.name.startsWith('*')) $store.globalData.editItem.name = $store.globalData.editItem.name.replace(/^\*\s*/, '')"
+                />
+                <div class="flex flex-col gap-2 mb-4 max-h-96 overflow-y-auto">
+
+
+                    <!-- KEYWORDS -->
+                    <label class="text-xs font-bold block mb-1">Keywords</label>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <template x-for="(kw, index) in $store.globalData.editItem.keywords" :key="index">
+                            <div class="relative inline-flex items-center">
+                                <!-- ✅ Haken links, nur bei unbestätigten (mit *) -->
+                                <button
+                                        x-show="kw.startsWith('*')"
+                                        @click="
+                        $store.globalData.editItem.keywords[index] = kw.replace(/^\*\s*/, '');
+                      "
+                                        class="text-green-600 text-xs hover:text-green-800"
+                                        title="Bestätigen"
+                                >✔
+                                </button>
+                                <input
+                                        type="text"
+                                        x-model="$store.globalData.editItem.keywords[index]"
+                                        class="rounded-full border px-3 py-1 text-xs pl-2 pr-3"
+                                        :class="kw.startsWith('*') ? 'bg-[var(--highlight-green)]' : ''"
+                                        :style="{ width: (kw.length + 2) + 'ch', minWidth: '7ch' }"
+                                />
+                                <button @click="$store.globalData.editItem.keywords.splice(index, 1)"
+                                        class="absolute right-1 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 text-xs">
+                                    ×
+                                </button>
+                            </div>
+                        </template>
+                        <!-- Neues Keyword -->
+                        <div class="relative inline-flex items-center">
+                            <input
+                                    type="text"
+                                    placeholder="Add keyword..."
+                                    class="rounded-full border px-3 py-1 text-xs pr-3"
+                                    x-model="newKeyword"
+                                    x-ref="newKeywordInput"
+                                    @keydown.enter.prevent="
+                    if (newKeyword.trim()) {
+                      $store.globalData.editItem.keywords.push(newKeyword.trim());
+                      newKeyword = '';
+                      $nextTick(() => $refs.newKeywordInput.focus());
+                    }
+                  "
+                                    @blur="
+                    if (newKeyword.trim()) {
+                      $store.globalData.editItem.keywords.push(newKeyword.trim());
+                      newKeyword = '';
+                    }
+                  "
+                            />
+                        </div>
+                    </div>
+
+                    <!-- PHRASES -->
+                    <label class="text-xs font-bold block mb-1">Phrases</label>
+                    <div class="flex flex-col gap-2 mb-4">
+                        <template x-for="(ph, idx) in $store.globalData.editItem.phrases" :key="idx">
+                            <div class="relative flex items-center gap-2">
+                                <!-- ✅ Haken nur für unbestätigte Phrases (mit *) -->
+                                <button
+                                        x-show="ph.startsWith('*')"
+                                        @click="$store.globalData.editItem.phrases[idx] = ph.replace(/^\*\s*/, '')"
+                                        class="text-green-600 text-xs hover:text-green-800"
+                                        title="Bestätigen"
+                                >✔
+                                </button>
+                                <input type="text" x-model="$store.globalData.editItem.phrases[idx]"
+                                       :class="ph.startsWith('*') ? 'bg-[var(--highlight-green)]' : ''"
+                                       class="w-full border px-3 py-1 pr-6 text-sm rounded"/>
+                                <button @click="$store.globalData.editItem.phrases.splice(idx, 1)"
+                                        class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 text-xs">
+                                    ×
+                                </button>
+                            </div>
+                        </template>
+                        <!-- Neue Phrase -->
+                        <input
+                                type="text"
+                                placeholder="Add phrase..."
+                                class="w-full border px-3 py-1 text-sm rounded"
+                                x-model="newPhrase"
+                                @keydown.enter.prevent="
+                  if (newPhrase.trim()) {
+                    $store.globalData.editItem.phrases.push(newPhrase.trim());
+                    newPhrase = '';
+                  }
+                "
+                                @blur="
+                  if (newPhrase.trim()) {
+                    $store.globalData.editItem.phrases.push(newPhrase.trim());
+                    newPhrase = '';
+                  }
+                "
+                        />
+                    </div>
+                </div>
+                <!-- ACTION BUTTONS -->
+                <div class="flex justify-end gap-2 mt-4">
+                    <!-- Buttons nur zeigen, wenn unbestätigte *-Elemente existieren -->
+                    <template
+                            x-if="($store.globalData.editItem.keywords || []).some(k => k.startsWith('*')) || ($store.globalData.editItem.phrases || []).some(p => p.startsWith('*'))">
+                        <div class="flex gap-2">
+                            <button
+                                    @click="$store.globalData.closeEditModal(true)"
+                                    class="text-sm px-3 py-1 bg-green-400 text-white rounded">Neue übernehmen
+                            </button>
+                            <button
+                                    @click="$store.globalData.closeEditModal(false)"
+                                    class="text-sm px-3 py-1 bg-red-400 text-white rounded">Neue verwerfen
+                            </button>
+                        </div>
+                    </template>
+
+                    <!-- Immer verfügbarer Close-Button -->
+                    <button class="text-sm px-3 py-1 bg-gray-200 rounded" @click="$store.globalData.closeEditModal()">
+                        Schließen
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!--------------------------------------
+     ROUTE Modal 
+     --------------------------------------->
+<!-- ROUTE MODAL (generisch aus route.selectable) -->
+<template x-if="$store.globalData.route.open">
+  <div class="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center">
+    <!-- ca. -20% Höhe -->
+    <div class="bg-white w-[76rem] max-w-[95vw] h-[576px] rounded-lg shadow-lg overflow-hidden flex flex-col">
+
+      <!-- Header -->
+      <div class="flex items-center justify-between px-4 py-3 border-b">
+        <div>
+          <h2 class="text-lg font-semibold">Edit Route</h2>
+          <div class="text-xs text-gray-500">
+            <span x-text="'Category: ' + ($store.globalData.route.cell?.categoryName ?? '-')"></span>
+            <span class="mx-1">·</span>
+            <span x-text="'Concern: ' + ($store.globalData.route.cell?.concernName ?? '-')"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="flex-1 grid grid-cols-12 overflow-hidden" x-data="{ dragIndex: null, openPanel: null, routeNameLocked:false }">
+
+        <!-- LEFT: Module-Liste (End = letztes Modul) -->
+        <div class="col-span-4 border-r overflow-hidden">
+          <div class="h-full flex flex-col">
+            <div class="flex items-center gap-2 p-3 border-b">
+              <div class="text-sm font-semibold">Route</div>
+              <input type="text" class="flex-1 border rounded px-2 py-1 text-xs" placeholder="Neue Route"
+                     x-model="$store.globalData.route.draft.name">
+              <button class="text-xs px-2 py-0.5 rounded bg-green-600 text-white"
+                      @click="
+                        $store.globalData.route.draft.modules.splice(
+                          $store.globalData.route.draft.modules.length-1, 0, { type:'faq' }
+                        );
+                        $store.globalData.route.selectedIndex = $store.globalData.route.draft.modules.length-2;
+                      ">
+                + Modul
+              </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-3 space-y-2">
+              <!-- MID MODULES (all but not last) -->
+              <template x-for="(mod, i) in $store.globalData.route.draft.modules.slice(0, $store.globalData.route.draft.modules.length-1)" :key="'mid-'+i">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <button
+                      class="w-full text-left px-2 py-2 rounded border transition hover:bg-gray-50 flex items-start gap-2"
+                      :class="{
+                        'bg-blue-50 border-blue-300': $store.globalData.route.selectedIndex===i,
+                        'border-gray-200': $store.globalData.route.selectedIndex!==i
+                      }"
+                      draggable="true"
+                      @dragstart="dragIndex = i; $event.dataTransfer.effectAllowed='move'; $event.dataTransfer.setDragImage($el,16,16)"
+                      @dragover.prevent="$event.dataTransfer.dropEffect='move'"
+                      @drop="
+                        (() => {
+                          const mods = $store.globalData.route.draft.modules;
+                          const to = i;
+                          if(dragIndex===null || dragIndex===to) return;
+                          const end = mods.pop();       // End temporär entnehmen
+                          const [m] = mods.splice(dragIndex,1);
+                          mods.splice(to,0,m);
+                          mods.push(end);               // End zurück
+                          $store.globalData.route.selectedIndex = to;
+                          dragIndex = null;
+                        })()
+                      "
+                      @click="$store.globalData.route.selectedIndex = i">
+
+                      <!-- Mid-Icon: vertikaler Balken -->
+                      <svg class="shrink-0 h-8 w-5 text-gray-700" viewBox="0 0 20 40" fill="currentColor" aria-hidden="true">
+                        <rect x="9" y="2" width="2" height="30" rx="1"></rect>
+                      </svg>
+
+                      <div class="min-w-0">
+                        <!-- Typ (mod.type) -->
+                        <div class="text-xs font-medium truncate" x-text="mod.type || '—'"></div>
+                        <!-- Name via Lookup (gruppen aus selectable.modules[mod.type].value) -->
+                        <div class="text-[10px] text-gray-500 truncate"
+                             x-text="$store.globalData.labelForSelection(mod)"></div>
+                      </div>
+                    </button>
+
+                    <!-- delete -->
+                    <button class="text-[10px] text-red-600 px-1" title="Entfernen"
+                            @click="
+                              $store.globalData.route.draft.modules.splice(i,1);
+                              if($store.globalData.route.selectedIndex===i){ $store.globalData.route.selectedIndex=null }
+                            ">✕</button>
+                  </div>
+                </div>
+              </template>
+
+              <!-- END MODULE (letztes Element) -->
+              <div>
+                <div class="flex items-center gap-2">
+                  <button
+                    class="w-full text-left px-2 py-2 rounded border transition hover:bg-gray-50 flex items-start gap-2"
+                    :class="{
+                      'bg-blue-50 border-blue-300': $store.globalData.route.selectedIndex===($store.globalData.route.draft.modules.length-1),
+                      'border-gray-200': $store.globalData.route.selectedIndex!==($store.globalData.route.draft.modules.length-1) }"
+                    @click="$store.globalData.route.selectedIndex = $store.globalData.route.draft.modules.length-1">
+
+                    <!-- End-Icon: Balken + Kreis -->
+                    <svg class="shrink-0 h-8 w-5 text-gray-700" viewBox="0 0 20 40" fill="currentColor" aria-hidden="true">
+                      <rect x="9" y="2" width="2" height="30" rx="1"></rect>
+                      <circle cx="10" cy="35" r="3"></circle>
+                    </svg>
+
+                    <div class="min-w-0">
+                      <!-- Typ -->
+                      <div class="text-xs font-medium truncate"
+                           x-text="$store.globalData.route.draft.modules.at(-1)?.type || 'disconnect'"></div>
+                      <!-- Name -->
+                      <div class="text-[10px] text-gray-500 truncate"
+                           x-text="$store.globalData.labelForSelection($store.globalData.route.draft.modules.at(-1))"></div>
+                    </div>
+                  </button>
+                  <div class="w-[1.25rem]"></div> <!-- no delete -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MIDDLE: generisches Akkordeon (aus selectable.order + modules) -->
+        <div class="col-span-4 border-r overflow-y-auto p-3" x-data="{ openPanel: null }">
+          <div class="text-sm font-semibold mb-2">Auswahl</div>
+
+          <template x-for="key in (
+            $store.globalData.route.selectedIndex === ($store.globalData.route.draft.modules.length-1)
+              ? $store.globalData.route.selectable.order.end
+              : $store.globalData.route.selectable.order.mid
+          )" :key="'sect-'+key">
+
+            <div class="mb-2" x-data="{ def: $store.globalData.route.selectable.modules[key] }">
+
+              <!-- Built-in: def.value ist string -->
+              <template x-if="typeof def.value === 'string'">
+                <button
+                  class="w-full text-left border rounded px-2 py-2 hover:bg-gray-50 flex items-center justify-between"
+                  :class="{
+                    'ring-2 ring-blue-400':
+                      (
+                        // End aktiv?
+                        ($store.globalData.route.selectedIndex === ($store.globalData.route.draft.modules.length-1)
+                          && $store.globalData.route.draft.modules.at(-1)?.type === def.value)
+                        ||
+                        // Mid aktiv?
+                        ($store.globalData.route.selectedIndex !== ($store.globalData.route.draft.modules.length-1)
+                          && $store.globalData.route.draft.modules[$store.globalData.route.selectedIndex]?.type === def.value)
+                      )
+                  }"
+                  @click="
+                    if ($store.globalData.route.selectedIndex === ($store.globalData.route.draft.modules.length-1)) {
+                      $store.globalData.route.draft.modules[$store.globalData.route.draft.modules.length-1] = { type: def.value };
+                    } else {
+                      const i = $store.globalData.route.selectedIndex;
+                      if (i!=null) $store.globalData.route.draft.modules[i] = { type: def.value };
+                    }
+                  ">
+                  <span class="text-xs font-semibold" x-text="def.label"></span>
+                </button>
+              </template>
+
+              <!-- Collection: def.value ist array (Akkordeon + Items aus groupedOptions) -->
+              <template x-if="Array.isArray(def.value)">
+                <div class="border rounded"
+                     :class="{
+                       'ring-2 ring-blue-400':
+                         (
+                           // End aktiv?
+                           ($store.globalData.route.selectedIndex === ($store.globalData.route.draft.modules.length-1)
+                             && $store.globalData.route.draft.modules.at(-1)?.type === key)
+                           ||
+                           // Mid aktiv?
+                           ($store.globalData.route.selectedIndex !== ($store.globalData.route.draft.modules.length-1)
+                             && $store.globalData.route.draft.modules[$store.globalData.route.selectedIndex]?.type === key)
+                         )
+                     }">
+                  <button class="w-full px-2 py-2 flex items-center justify-between text-left"
+                          @click="openPanel = (openPanel===key ? null : key)">
+                    <span class="text-xs font-bold" x-text="def.label"></span>
+                    <span x-text="openPanel===key ? '–' : '+'"></span>
+                  </button>
+
+                  <div x-show="openPanel===key" class="border-t max-h-64 overflow-auto">
+                    <template x-for="group in $store.globalData.groupedOptions(def.value)" :key="'grp-'+key+'-'+group.group">
+                      <template x-for="item in group.items" :key="item.key">
+                        <div class="px-2 py-1 text-xs cursor-pointer hover:bg-blue-50"
+                             :class="{
+                               'bg-blue-100':
+                                 (
+                                   // End-Child aktiv?
+                                   ($store.globalData.route.selectedIndex === ($store.globalData.route.draft.modules.length-1)
+                                     && $store.globalData.route.draft.modules.at(-1)?.type === key
+                                     && $store.globalData.route.draft.modules.at(-1)?.value === item.value.value)
+                                   ||
+                                   // Mid-Child aktiv?
+                                   ($store.globalData.route.selectedIndex !== ($store.globalData.route.draft.modules.length-1)
+                                     && $store.globalData.route.draft.modules[$store.globalData.route.selectedIndex]?.type === key
+                                     && $store.globalData.route.draft.modules[$store.globalData.route.selectedIndex]?.value === item.value.value)
+                                 )
+                             }"
+                             @click="
+                               if ($store.globalData.route.selectedIndex === ($store.globalData.route.draft.modules.length-1)) {
+                                 $store.globalData.route.draft.modules[$store.globalData.route.draft.modules.length-1] = { type: key, value: item.value.value };
+                               } else {
+                                 const i = $store.globalData.route.selectedIndex;
+                                 if (i!=null) $store.globalData.route.draft.modules[i] = { type: key, value: item.value.value };
+                               }
+                               if (($store.globalData.route.draft.name==='Neue Route' || !$store.globalData.route.draft.name) && item.label && !routeNameLocked) {
+                                 $store.globalData.route.draft.name = item.label; routeNameLocked = true;
+                               }
+                             ">
+                          <span x-text="item.label"></span>
+                        </div>
+                      </template>
+                    </template>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </template>
+        </div>
+
+        <!-- RIGHT: Properties (read-only) -->
+        <div class="col-span-4 overflow-hidden">
+          <div class="h-full overflow-y-auto p-3">
+            <div class="text-sm font-semibold mb-2">Properties</div>
+
+            <!-- End: disconnect -->
+            <template x-if="$store.globalData.route.selectedIndex === ($store.globalData.route.draft.modules.length-1)
+                            && $store.globalData.route.draft.modules.at(-1)?.type==='disconnect'">
+              <div class="text-xs space-y-1">
+                <div class="font-semibold">Disconnect</div>
+                <div><span class="text-gray-500">Beschreibung:&nbsp;</span>
+                  <span class="text-gray-700">Das Disconnect-Modul verabschiedet den Anrufer und beendet den Dialog. Damit ist der Telefonanruf beendet.</span>
+                </div>
+              </div>
+            </template>
+
+            <!-- End: central -->
+            <template x-if="$store.globalData.route.selectedIndex === ($store.globalData.route.draft.modules.length-1)
+                            && $store.globalData.route.draft.modules.at(-1)?.type==='central'">
+              <div class="text-xs space-y-1">
+                <div class="font-semibold">Central</div>
+                <div><span class="text-gray-500">Beschreibung:&nbsp;</span>
+                  <span class="text-gray-700">Das Central-Modul leitet den Anrufer zurück in die offene Eingangsfrage, damit der Anrufer erneut ein Thema auswählen und den Dialog über einen anderen Pfad durchlaufen kann.</span>
+                </div>
+              </div>
+            </template>
+
+            <!-- End: target -->
+            <template x-if="$store.globalData.route.selectedIndex === ($store.globalData.route.draft.modules.length-1)
+                            && $store.globalData.route.draft.modules.at(-1)?.type==='target'">
+              <div class="text-xs space-y-1">
+                <div class="font-semibold">Target</div>
+                <div>
+                  <span class="text-gray-500">Name:&nbsp;</span>
+                  <span x-text="
+                    (() => {
+                      const end = $store.globalData.route.draft.modules.at(-1);
+                      const def = $store.globalData.route.selectable.modules['target'];
+                      if(!Array.isArray(def.value) || !end?.value) return '—';
+                      const groups = $store.globalData.groupedOptions(def.value) || [];
+                      for(const g of groups){ for(const it of (g.items||[])){ if(it?.value?.value===end.value) return it.label; } }
+                      return '—';
+                    })()
+                  "></span>
+                </div>
+                <div><span class="text-gray-500">ID:&nbsp;</span>
+                  <span x-text="$store.globalData.route.draft.modules.at(-1)?.value || '—'"></span>
+                </div>
+              </div>
+            </template>
+
+            <!-- End: diy -->
+            <template x-if="$store.globalData.route.selectedIndex === ($store.globalData.route.draft.modules.length-1)
+                            && $store.globalData.route.draft.modules.at(-1)?.type==='diy'">
+              <div class="text-xs space-y-1">
+                <div class="font-semibold">DIY</div>
+                <div>
+                  <span class="text-gray-500">Name:&nbsp;</span>
+                  <span x-text="
+                    (() => {
+                      const end = $store.globalData.route.draft.modules.at(-1);
+                      const def = $store.globalData.route.selectable.modules['diy'];
+                      if(!Array.isArray(def.value) || !end?.value) return '—';
+                      const groups = $store.globalData.groupedOptions(def.value) || [];
+                      for(const g of groups){ for(const it of (g.items||[])){ if(it?.value?.value===end.value) return it.label; } }
+                      return '—';
+                    })()
+                  "></span>
+                </div>
+                <div><span class="text-gray-500">ID:&nbsp;</span>
+                  <span x-text="$store.globalData.route.draft.modules.at(-1)?.value || '—'"></span>
+                </div>
+              </div>
+            </template>
+
+            <!-- Mid: Quick Info -->
+            <template x-if="$store.globalData.route.selectedIndex !== ($store.globalData.route.draft.modules.length-1)
+                            && $store.globalData.route.selectedIndex!=null">
+              <div class="mt-3 text-xs space-y-1">
+                <div>
+                  <span class="font-semibold">Name:&nbsp;</span>
+                  <span x-text="
+                    (() => {
+                      const m = $store.globalData.route.draft.modules[$store.globalData.route.selectedIndex];
+                      const def = $store.globalData.route.selectable.modules[m?.type];
+                      if(!def || !Array.isArray(def.value) || !m?.value) return '—';
+                      const groups = $store.globalData.groupedOptions(def.value) || [];
+                      for(const g of groups){ for(const it of (g.items||[])){ if(it?.value?.value===m.value) return it.label; } }
+                      return '—';
+                    })()
+                  "></span>
+                </div>
+                <div><span class="font-semibold">Typ:&nbsp;</span>
+                  <span x-text="$store.globalData.route.draft.modules[$store.globalData.route.selectedIndex]?.type || '—'"></span>
+                </div>
+                <div><span class="text-gray-500">ID:&nbsp;</span>
+                  <span x-text="$store.globalData.route.draft.modules[$store.globalData.route.selectedIndex]?.value || '—'"></span>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-4 py-3 border-t flex items-center justify-end gap-2">
+        <button class="px-3 py-1 text-sm rounded bg-gray-200" @click="$store.globalData.closeRouteModal()">Abbrechen</button>
+        <button class="px-3 py-1 text-sm rounded text-white bg-blue-600" @click="$store.globalData.saveRouteModal()">Bestätigen</button>
+      </div>
+    </div>
+  </div>
+</template>
+    <!---------------------------------------
+     ROUTE MODAL END
+     --------------------------------------->
+</div>
+
+
+<span x-show="!$store.aiAssist.show" class="burger-icon">≡</span>
+<div class="burger-menu rounded shadow absolute">
+
+</div>
+
+
+<!-- Top Dropdown -->
+<div
+        x-show="$store.dropdownMenu.visible"
+        x-transition
+        x-cloak
+        :style="{ top: $store.dropdownMenu.posY + 'px', left: $store.dropdownMenu.posX + 'px' }"
+        class="fixed burger-menu-left z-100 bg-white border shadow-lg rounded text-sm w-48"
+        @click.outside="$store.dropdownMenu.close()"
+>
+    <template x-if="$store.dropdownMenu.type === 'th'">
+        <div>
+            <button @click="$store.globalData.openEditModal($store.dropdownMenu.row, 'concern'); $store.dropdownMenu.close()">
+                Edit
+            </button>
+            <button @click="$store.globalData.removeConcern($store.dropdownMenu.row); $store.dropdownMenu.close()">
+                Delete Concern
+            </button>
+        </div>
+    </template>
+    <template x-if="$store.dropdownMenu.type === 'td'">
+        <div>
+            <button @click="$store.globalData.openEditModal($store.dropdownMenu.row.obj, 'category'); $store.dropdownMenu.close()">
+                Edit
+            </button>
+            <button
+                    x-init="console.log('isParent?', $store.dropdownMenu.row?.isParent)"
+                    x-show="$store.dropdownMenu.row && $store.dropdownMenu.row.isParent"
+                    @click="$store.globalData.addSubcategory($store.dropdownMenu.row.obj); $store.dropdownMenu.close()">
+                +
+                Subcat
+            </button>
+            <button
+                    x-show="$store.dropdownMenu.row && $store.dropdownMenu.row.isParent"
+                    @click="$store.globalData.removeParentCategory($store.dropdownMenu.row.obj); $store.dropdownMenu.close()">
+                Delete Cat
+            </button>
+            <button
+                    x-show="$store.dropdownMenu.row && !$store.dropdownMenu.row.isParent"
+                    @click="$store.globalData.removeSubcategory($store.dropdownMenu.row.obj); $store.dropdownMenu.close()">
+                Delete Subcat
+            </button>
+        </div>
+    </template>
+
+    <template x-if="$store.dropdownMenu.type === 'main'">
+        <div>
+            <button @click="$store.globalData.addParentCategory(); $store.dropdownMenu.close()">+ Kategorien hinzufügen</button>
+            <button @click="$store.globalData.addConcern(); $store.dropdownMenu.close()">+ Intention hinzufügen</button>
+        </div>
+    </template>
+</div>
+
+
+<template x-if="$store.globalData.showDebugModal">
+    <div class="fixed inset-0 flex items-center justify-center bg-black bg-black/50 z-50">
+        <div class="bg-white rounded-lg w-[90vw] max-w-4xl max-h-[80vh] p-4 shadow-lg overflow-auto">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-lg font-semibold">Debug Matrix</h2>
+                <button @click="$store.globalData.showDebugModal = false"
+                        class="text-sm text-gray-500 hover:text-black">✕
+                </button>
+            </div>
+            <pre class="text-xs whitespace-pre-wrap">
+    MATRIX: <span x-text="JSON.stringify($store.globalData.matrix, null, 2)"></span>
+
+    CATEGORIES: <span x-text="JSON.stringify($store.globalData.categories, null, 2)"></span>
+
+    CONCERNS: <span x-text="JSON.stringify($store.globalData.concerns, null, 2)"></span>
+
+    TARGETS: <span x-text="JSON.stringify($store.globalData.targets, null, 2)"></span>
+
+    SELECTED: <span x-text="$store.globalData.selectedTargetId"></span> =>
+      <span x-text="JSON.stringify($store.globalData.selectedTarget, null, 2)"></span>
+          </pre>
+        </div>
+    </div>
+</template>
+

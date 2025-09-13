@@ -1,0 +1,153 @@
+<div class="relative h-full">
+  <div class="absolute inset-0 overflow-hidden">
+    <div class="grid grid-cols-[minmax(0,2.2fr)_minmax(0,0.8fr)] gap-4 h-full min-h-0">
+      
+      <!-- Left side agent conifg-->
+      <div class="h-full p-6 min-h-0 overflow-y-auto pr-2">
+        <template x-if="$store.globalData.selectedInfoAgentId && $store.globalData.info_agents[$store.globalData.selectedInfoAgentId]">
+            <div x-data="infoAgentModule()" class="space-y-6">
+                <!-- Agent Name -->
+                <div>
+                    <label class="text-sm font-semibold">Agent Name</label>
+                    <input type="text" class="w-full border px-2 py-1 rounded text-sm"
+                        x-model="$store.globalData.info_agents[$store.globalData.selectedInfoAgentId].name">
+                </div>
+
+                <!-- Personality -->
+                <div>
+                <label class="text-sm font-semibold">Personality</label>
+                <textarea class="w-full border px-2 py-1 rounded text-sm" rows="3"
+                            x-model="$store.globalData.info_agents[$store.globalData.selectedInfoAgentId].personality"></textarea>
+                </div>
+
+                <!-- Instruction -->
+                <div>
+                    <label class="text-sm font-semibold">Instruktion</label>
+                    <textarea class="w-full border px-2 py-1 rounded text-sm" rows="3"
+                            x-model="$store.globalData.info_agents[$store.globalData.selectedInfoAgentId].instruction"></textarea>
+                </div>
+
+                <!-- Trainings Content Auswahl: 2-Spalten-Layout -->
+                <div class="space-y-2">
+                    <label class="text-sm font-semibold">Inhalte auswählen:</label>
+                    <div class="grid grid-cols-2 gap-4">
+
+                        <!-- Left Side: FAQs -->
+                        <div class="border rounded p-2 max-h-64 overflow-y-auto">
+                        <h4 class="text-xs font-bold mb-1">FAQs</h4>
+                        <template  x-for="[id, faq] of Object.entries($store.globalData.faqs)" :key="id">
+                            <div x-show="!isAlreadyInTraining('faq', id)" @click="addTrainingItem('faq', id)" class="flex justify-between items-center text-xs border-b py-1">
+                            <span class="truncate w-4/5" x-text="faq.title"></span>
+                            <span class="text-green-600">＋</span>
+                            </div>
+                        </template>
+                        </div>
+
+                        <!-- Right side: PDFs -->
+                        <div class="border rounded p-2 max-h-64 overflow-y-auto">
+                        <h4 class="text-xs font-bold mb-1">Dokumente (PDF)</h4>
+                        <template x-for="doc in documents" :key="doc.id">
+                            <div x-show="!isAlreadyInTraining('pdf', doc.id)" @click="addTrainingItem('pdf', doc.id)" class="flex justify-between items-center text-xs border-b py-1">
+                            <span class="truncate w-4/5" x-text="doc.name"></span>
+                            <span class="text-green-600">＋</span>
+                            </div>
+                        </template>
+                        </div>
+
+                    </div>
+                </div>
+
+                <label class="text-sm font-semibold">Ausgewählte Inhalte: </label>
+                <!-- Liste der Trainingsinhalte -->
+                <div class="border rounded p-2 space-y-2 bg-gray-50">
+                    <template x-for="(item, index) in $store.globalData.info_agents[$store.globalData.selectedInfoAgentId].trainingsContent" :key="item.id + '-' + index">
+                        <div class="flex items-center justify-between text-sm px-2 py-1 rounded border"
+                            :class="{
+                                'bg-green-50 border-green-400': item.already_uploaded && !item.flags.delete,
+                                'bg-gray-100 opacity-50 line-through border-gray-300': item.flags.delete,
+                                'bg-white border-gray-200': !item.already_uploaded && !item.flags.delete
+                            }">
+                            <div>
+                                <span class="font-semibold" x-text="item.type.toUpperCase()"></span> -
+                                <span x-text="item.title || item.id"></span>
+                            </div>
+                            <div class="flex gap-2 items-center">
+                                <!-- Reindex nur anzeigen wenn already_uploaded -->
+                                <template x-if="item.already_uploaded">
+                                    <label class="text-xs">
+                                        <input type="checkbox" x-model="item.flags.force_reindex">
+                                        Reindex
+                                    </label>
+                                </template>
+
+                                <!-- Delete Button -->
+                                <button class="text-red-500 text-sm"
+                                        :title="item.flags.delete ? 'Löschmarkierung entfernen' : 'Zum Löschen markieren'"
+                                        @click="deleteTrainingItem(index)">
+                                    ✖
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Trainieren Button -->
+                <div>
+                    <button class="bg-green-600 text-white px-4 py-2 rounded shadow"
+                            @click="trainAgent">Verarbeiten</button>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Right Side Selection List -->
+          <div class="h-full border-l">
+        <h3 class="text-sm font-semibold bg-dark-grey text-gray-200 px-3 py-3 w-full mb-0">
+          Verfügbare Info Agents
+        </h3>
+
+        <template x-for="[id, agent] in Object.entries($store.globalData.info_agents)" :key="id">
+          <div
+            class="flex items-center justify-between p-2 border-b cursor-pointer mx-2 mt-2"
+            :class="($store.globalData.selectedInfoAgentId === id ? 'bg-blue-100 rounded-l' : '')"
+            @click="$store.globalData.selectedInfoAgentId = id">
+            <div class="flex flex-col text-left">
+              <span class="text-sm font-medium" x-text="agent.name || 'Unbenannter Agent'"></span>
+              <span class="text-xs text-gray-500" x-text="agent.personality || 'Keine Personality'"></span>
+            </div>
+            <button
+              @click.stop="$store.modal.confirm({
+                title: 'Wollen Sie den Info Agent wirklich löschen?',
+                message: 'Diese Aktion kann nicht rückgängig gemacht werden.',
+                onConfirm: () => delete $store.globalData.info_agents[id]
+              })"
+              class="ml-2 w-6 h-6 flex items-center justify-center rounded transition-all duration-200
+                     text-gray-400 hover:text-red-500 hover:shadow-[0_0_4px_2px_rgba(239,68,68,0.6)]">
+              <span class="text-[0.5rem]">❌</span>
+            </button>
+          </div>
+        </template>
+
+        <div class="flex justify-center mt-3 mb-2 mx-2">
+          <button
+            class="bg-green-600 text-white text-xs px-3 py-1 rounded"
+            @click="(() => {
+              const id = crypto.randomUUID();
+              $store.globalData.info_agents[id] = {
+                name: '',
+                personality: '',
+                instruction: '',
+                trainingsContent: [],
+                agent_id: id,
+                tenant_id: $store.globalData.client_id
+              };
+              $store.globalData.selectedInfoAgentId = id;
+            })()">
+            + Neuer Info Agent
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

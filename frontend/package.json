@@ -1,0 +1,30 @@
+{
+  "name": "abf-spa",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "main": "tailwind.config.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.4.0",
+    "@tailwindcss/postcss": "^4.1.8",
+    "alpinejs": "^3.x",
+    "autoprefixer": "^10.4.0",
+    "fast-glob": "^3.3.3",
+    "postcss": "^8.4.31",
+    "tailwindcss": "^4.1.8",
+    "vite": "^6.3.1"
+  },
+  "dependencies": {
+    "@google-cloud/dialogflow": "^7.1.0",
+    "@google-cloud/dialogflow-cx": "^5.1.0",
+    "@tailwindcss/cli": "^4.1.8",
+    "@tailwindcss/vite": "^4.1.7",
+    "alpinejs-component": "^1.2.10",
+    "purecloud-platform-client-v2": "^221.0.0"
+  }
+}

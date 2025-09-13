@@ -1,0 +1,217 @@
+@import "tailwindcss";
+
+@layer base {
+    *,
+    ::before,
+    ::after,
+    ::backdrop,
+    input,
+    select,
+    textarea,
+    button,
+    ::file-selector-button {
+        @apply border-gray-200;
+    }
+}
+
+
+@theme {
+    --color-primary: oklch(51.63% 0.201 264.6);
+    --color-primary-dark: oklch(31.15% 0.149 267.1);
+    --color-secondary: oklch(28.28% 0.045 265.8);
+    --color-secondary-dark: oklch(9.77% 0.015 259.5);
+    --color-dark-grey: #1E1E1E; /* grey */
+    --color-mid-grey: #4B4B4B;
+    --color-light-grey: #D4D4D4;
+    --color-highlight-orange: #ffb84d; /* Orange */
+    --color-highlight-yellow: #FFD600; /* yellow */
+    --color-highlight-blue:   #5dade2; /* Blue */
+    --color-highlight-green: #a8e6a1;
+}
+
+body {
+    margin: 0;
+    background-color: #f9fafb;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.highlight-new {
+    background-color: var(--highlight-orange);
+}
+
+.split-container {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+.vertical-resizer {
+    width: 5px;
+    /*background-color: #eee;*/
+    cursor: col-resize;
+    user-select: none;
+}
+
+.horizontal-resizer {
+    height: 5px;
+    /*background-color: #eee;*/
+    cursor: row-resize;
+    user-select: none;
+}
+
+.burger-container {
+    position: relative;
+    display: inline-block;
+    height: 2rem;
+    width: 2rem;
+}
+
+.burger-icon {
+    display: inline-block;
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #555;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+
+.burger-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #333;
+    color: #fff;
+    border: 1px solid #222;
+    z-index: 51;
+    min-width: 120px;
+    padding: 2px 0;
+}
+
+.burger-menu-left {
+    top: 100%;
+    right: 0;
+    background: #333;
+    color: #fff;
+    border: 1px solid #222;
+    z-index: 51;
+    min-width: 120px;
+    padding: 2px 0;
+}
+
+
+
+.burger-menu button,
+.burger-menu-left button {
+    display: block;
+    width: 100%;
+    background: transparent;
+    text-align: left;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    border: none;
+    color: white;
+    cursor: pointer;
+}
+
+.burger-menu button:hover {
+    background: #444;
+}
+
+/* Optional tab style tweaks */
+button:focus {
+    outline: none;
+}
+
+.dropdown-panel {
+    display: inline-block;
+    white-space: nowrap;
+    width: auto;
+    max-width: 300px;
+}
+
+/* Compact matrix */
+.compact-table .matrix-cell-button {
+    width: 4rem; /* fest   */
+    max-width: 4rem; /* Deckel */
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 2px 4px;
+    font-size: 0.7rem;
+}
+
+/* Force all matrix header and data cells to a fixed width */
+.compact-table th.concern-th,
+.compact-table td.concern-td {
+    width: 2rem;
+    max-width: 2rem;
+    min-width: 2rem;
+    padding: 0.25rem;
+}
+
+/* Only for concern columns in compact mode */
+.compact-table th.concern-th .burger-container {
+    position: absolute;
+    right: 0px;
+    bottom: 0px;
+}
+
+/* Only rotate the label text (not the whole th cell) */
+.concern-header {
+    transform: rotate(-60deg);
+    transform-origin: bottom left;
+    white-space: nowrap;
+    display: inline-block;
+    font-size: 0.75rem;
+    line-height: 1;
+    margin-left: 10px;
+}
+
+.concern-th {
+    height: 100px;
+    vertical-align: bottom;
+    padding: 0px;
+    position: relative;
+}
+
+/* Ai Assist */
+
+/* Stil für AI-Auswahl-Buttons */
+.ai-button-container {
+    width: 100%;
+}
+
+.ai-button {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    background-color: var(--highlight-blue);
+    color: white;
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: background-color 0.2s ease;
+}
+
+.ai-button:hover {
+    background-color: #4a9ed6;
+}
+
+.ai-button.selected {
+    background-color: var(--highlight-orange);
+}
+
+.ai-button.disabled {
+    background-color: #888888;
+    pointer-events: none;
+}
+

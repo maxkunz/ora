@@ -1,0 +1,107 @@
+<div x-data="$store.mission" class="max-w-full space-y-6">
+    <!-- Mission Parameter -->
+    <div class="bg-white p-6 rounded shadow space-y-4">
+        <h2 class="text-lg font-semibold">Mission erstellen</h2>
+
+        <div>
+            <label class="block text-sm font-medium mb-1">Persona</label>
+            <input type="text" x-model="mission.persona" class="w-full border rounded px-3 py-2"
+                   placeholder="Persona eingeben">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1">Tonfall</label>
+            <input type="range" min="0" max="1" step="0.5" x-model.number="mission.tonfall" class="w-full">
+            <div class="flex justify-between text-xs text-gray-600 mt-1">
+                <span>Defensiv</span>
+                <span>Ausgeglichen</span>
+                <span>Bestimmend</span>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1">Hintergrundgeschichte</label>
+            <textarea x-model="mission.background" class="w-full border rounded px-3 py-2" rows="3"
+                      placeholder="Story..."></textarea>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1">Backend URL</label>
+            <input type="url" x-model="mission.backendUrl" class="w-full border rounded px-3 py-2"
+                   placeholder="https://...">
+        </div>
+    </div>
+
+    <!-- Slots -->
+    <div class="bg-white p-6 rounded shadow space-y-4">
+        <h3 class="text-md font-semibold">Slots</h3>
+
+        <template x-for="(slot, index) in mission.slots" :key="index">
+            <div class="border p-4 rounded space-y-2">
+                <div class="flex justify-between items-center">
+                    <span class="font-medium">Slot <span x-text="index + 1"></span></span>
+                    <button @click="removeSlot(index)" class="text-red-500 text-sm">Entfernen</button>
+                </div>
+
+                <div>
+                    <label class="block text-sm">Name</label>
+                    <input type="text" x-model="slot.name" class="w-full border rounded px-2 py-1">
+                </div>
+
+                <div>
+                    <label class="block text-sm">Typ</label>
+                    <select x-model="slot.type" class="w-full border rounded px-2 py-1">
+                        <option value="string">string</option>
+                        <option value="int">int</option>
+                        <option value="bool">bool</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm">Anweisung</label>
+                    <textarea x-model="slot.instruction" class="w-full border rounded px-2 py-1" rows="2"></textarea>
+                </div>
+            </div>
+        </template>
+
+        <button @click="addSlot" class="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">+ Slot
+            hinzufügen
+        </button>
+        <button @click="update" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+            Mission speichern
+        </button>
+    </div>
+
+    <!-- Debug -->
+    <div class="bg-white p-4 rounded shadow">
+        <h4 class="font-semibold text-sm mb-2">Mission JSON</h4>
+        <pre class="text-xs bg-gray-100 p-2 overflow-x-auto"><code
+                x-text="JSON.stringify(mission, null, 2)"></code></pre>
+    </div>
+</div>
+
+<link rel="stylesheet"
+      href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css">
+<script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
+<df-messenger
+        project-id="ora-development-465909"
+        agent-id="4e82f5b5-4369-41a9-8044-044fe396efdb"
+        language-code="de"
+        max-query-length="-1">
+    <df-messenger-chat-bubble
+            chat-title="Ora Test Bot">
+    </df-messenger-chat-bubble>
+</df-messenger>
+<style>
+    df-messenger {
+        z-index: 999;
+        position: fixed;
+        --df-messenger-font-color: #000;
+        --df-messenger-font-family: Google Sans;
+        --df-messenger-chat-background: #f3f6fc;
+        --df-messenger-message-user-background: #d3e3fd;
+        --df-messenger-message-bot-background: #fff;
+        bottom: 16px;
+        right: 16px;
+    }
+</style>
