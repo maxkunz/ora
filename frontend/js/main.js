@@ -284,18 +284,24 @@ route: {
 
   // Generische Definition aller auswählbaren Module (kompakt: 1 Modul/Zeile)
   selectable: {
-    order: { end: ['disconnect','central','target','diy'], mid: ['faq','guide','info_agent','idnv'] },
+    order: { end: ['disconnect','concierge','target','diy'], mid: ['idnv', 'faq','guide','info_agent'] },
     modules: {
       disconnect: { label:'Disconnect',   value:'disconnect' },
       idnv: { label:'ID&V',   value:'idnv' },
-      central:    { label:'Central',      value:'central' },
-      target:     { label:'Routing',       value:['Targets'] },
-      diy:        { label:'DIY',          value:['DIYs'] },
-      faq:        { label:'FAQ',          value:['FAQs'] },
-      guide:      { label:'Guide Missions',       value:['Guides'] },
-      info_agent: { label:'AI Info',  value:['Info Agents'] },
+      concierge:    { label:'Concierge',      value:'concierge' },
+      target:     { label:'Routing',       value:['Routing'] },
+      diy:        { label:'DIY',          value:['DIY'] },
+      faq:        { label:'Basic Info',          value:['Basic Info'] },
+      guide:      { label:'AI Mission',       value:['AI Mission'] },
+      info_agent: { label:'AI Info',  value:['AI Info'] },
     },
   },
+},
+
+resolveRouteTypeToLabel(type) {
+  if (!type) return '—'; // kein Typ übergeben
+  const mod = this.route?.selectable?.modules?.[type];
+  return mod?.label ?? type; // Fallback: label, sonst raw type zurückgeben
 },
 
 openRouteModal(categoryId, concernId, categoryName, concernName) {
@@ -310,7 +316,7 @@ openRouteModal(categoryId, concernId, categoryName, concernName) {
       name: 'Neue Route',
       modules: [
         // optional: ein Mid-Start lassen wir weg; End ist Disconnect
-        { type: 'Disconnect' } // End (immer letzter Eintrag)
+        { type: 'disconnect' } // End (immer letzter Eintrag)
       ],
     };
   }
@@ -495,15 +501,15 @@ closeRouteModal() {
         groupedOptions(includedGroups = []) {
             const allGroups = [
                 {
-                    group: 'Targets',
+                    group: 'Routing',
                     items: Object.values(Alpine.store("globalData").targets).map(t => ({
                         key: t.id,
-                        value: {type: t.type, value: t.id},
+                        value: {type: "target", value: t.id},
                         label: t.value
                     }))
                 },
                 {
-                    group: 'FAQs',
+                    group: 'Basic Info',
                     items: Object.values(Alpine.store("globalData").faqs).map(f => ({
                         key: f.id,
                         value: {type: 'faq', value: f.id},
@@ -511,7 +517,7 @@ closeRouteModal() {
                     }))
                 },
                 {
-                    group: 'Guides',
+                    group: 'AI Mission',
                     items: Object.values(Alpine.store("globalData").guides).map(g => ({
                         key: g.id,
                         value: { type: 'guide', value: g.id },
@@ -519,7 +525,7 @@ closeRouteModal() {
                     }))
                 },
                 {
-                    group: 'DIYs',
+                    group: 'DIY',
                     items: Object.values(Alpine.store("globalData").diys).map(f => ({
                         key: f.id,
                         value: {type: 'diy', value: f.id},
@@ -527,7 +533,7 @@ closeRouteModal() {
                     }))
                 },
                 {
-                    group: 'Info Agents',
+                    group: 'AI Info',
                     items: Object.values(Alpine.store("globalData").info_agents).map(f => ({
                         key: f.agent_id,
                         value: {type: 'info_agent', value: f.agent_id},
