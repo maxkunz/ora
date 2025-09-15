@@ -586,10 +586,34 @@
         </div>
       </div>
 
-      <!-- Footer -->
-      <div class="px-4 py-3 border-t flex items-center justify-end gap-2">
-        <button class="px-3 py-1 text-sm rounded bg-gray-200" @click="$store.globalData.closeRouteModal()">Abbrechen</button>
-        <button class="px-3 py-1 text-sm rounded text-white bg-blue-600" @click="$store.globalData.saveRouteModal()">Bestätigen</button>
+      <!-- Footer 
+      <div class="px-4 py-3 border-t flex items-center justify-end gap-2">-->
+      <div class="px-4 py-3 border-t flex items-center justify-between">
+        <!-- LINKS: Route löschen -->
+        <button
+          class="px-3 py-1 text-sm rounded bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
+          @click="
+            $store.modal.confirm({
+              title: 'Route löschen',
+              message: 'Möchten Sie die Route für diese Category/Concern wirklich löschen?',
+              confirmLabel: 'Ja, löschen',
+              cancelLabel: 'Nein',
+              onConfirm: () => {
+                const cell = $store.globalData.route.cell;
+                if (cell) {
+                  $store.globalData.matrixUnset(cell.categoryId, cell.concernId);
+                }
+                $store.globalData.closeRouteModal();
+              }
+            })
+          "
+        >
+          Route löschen
+        </button>
+        <div class="flex items-center gap-2">
+          <button class="px-3 py-1 text-sm rounded bg-gray-200" @click="$store.globalData.closeRouteModal()">Abbrechen</button>
+          <button class="px-3 py-1 text-sm rounded text-white bg-blue-600" @click="$store.globalData.saveRouteModal()">Bestätigen</button>
+        </div>
       </div>
     </div>
   </div>

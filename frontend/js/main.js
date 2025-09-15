@@ -4,12 +4,11 @@ import * as genesys from './genesys_helper.js';
 import platformClient from "purecloud-platform-client-v2";
 import './dragBar.js';
 import './aiAssist.js';
-import '../pages/mission/mission.js'
 import {AIGenService} from './AIGenService.js';
 import { setupWizard } from './setup_wizard.js';
 import '../css/styles.css';
 import { infoAgentModule } from "../pages/info_agent/info_agent.js";
-import {mission} from "../pages/mission/mission.js";
+import { basicMissionsModule} from "../pages/basic_missions/basic_missions.js";
 
 
 const architectApi = new platformClient.ArchitectApi();
@@ -23,6 +22,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('alpine:init', () => {
     Alpine.data("infoAgentModule", infoAgentModule);
+    Alpine.data("basicMissionsModule", basicMissionsModule);
 
     window.Alpine.store('genesys', {
         client: platformClient.ApiClient.instance,
@@ -55,6 +55,7 @@ document.addEventListener('alpine:init', () => {
         guides: {},
         diys: [],
         info_agents: {},
+        basic_missions: {},
 
         fileMenu: {
             showNewInput: false,
@@ -91,6 +92,7 @@ document.addEventListener('alpine:init', () => {
             guide: 'bg-[#BCB550] text-black',      // Olivgrün, wie gewünscht
             faq: 'bg-[#F2FEDC] text-black',        // sehr helles Grün, freundlich
             info_agent: 'bg-[#BCB550] text-black', // gleiche Farbe wie guide
+            basic_mission: 'bg-[#FFFDBF] text-black',
             diy: 'bg-[#FDC5A5] text-black',        // leichtes Pastell-Korall
             default: 'bg-gray-100 text-gray-700',  // neutrales Grau
         },
@@ -284,7 +286,7 @@ route: {
 
   // Generische Definition aller auswählbaren Module (kompakt: 1 Modul/Zeile)
   selectable: {
-    order: { end: ['disconnect','concierge','target','diy'], mid: ['idnv', 'faq','guide','info_agent'] },
+    order: { end: ['disconnect','concierge','target','diy'], mid: ['idnv', 'faq','guide','info_agent', 'basic_mission'] },
     modules: {
       disconnect: { label:'Disconnect',   value:'disconnect' },
       idnv: { label:'ID&V',   value:'idnv' },
@@ -294,6 +296,7 @@ route: {
       faq:        { label:'Basic Info',          value:['Basic Info'] },
       guide:      { label:'AI Mission',       value:['AI Mission'] },
       info_agent: { label:'AI Info',  value:['AI Info'] },
+      basic_mission: { label:'Basic Mission',  value:['Basic Mission'] },
     },
   },
 },
@@ -539,6 +542,14 @@ closeRouteModal() {
                         value: {type: 'info_agent', value: f.agent_id},
                         label: f.name
                     }))
+                },
+                {
+                    group: 'Basic Mission',
+                    items: Object.values(Alpine.store("globalData").basic_missions).map(f => ({
+                        key: f.id,
+                        value: {type: 'basic_mission', value: f.id},
+                        label: f.name
+                    }))
                 }
             ];
             // return all if no filter applied
@@ -696,7 +707,6 @@ closeRouteModal() {
             if (typeof this.onCancel === 'function') this.onCancel()
         },
     }));
-    window.Alpine.store("mission", mission())
     let dropdownMenu = window.Alpine.reactive({
         visible: false,
         posX: 0,

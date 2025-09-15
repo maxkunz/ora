@@ -29,6 +29,7 @@ export async function syncConfigurationToGenesys(datatable_id, version) {
             meta: JSON.stringify(global_data.meta),
             diy: JSON.stringify(global_data.diys),
             info_agents: JSON.stringify(global_data.info_agents),
+            basic_missions: JSON.stringify(global_data.basic_missions),
         }
     };
     architectApi.putFlowsDatatableRow(datatable_id, version, data)
@@ -52,6 +53,7 @@ export async function newConfigurationToGenesys(datatable_id, version) {
         meta: JSON.stringify({}),
         diy: JSON.stringify([]),
         info_agents: JSON.stringify({}),
+        basic_missions: JSON.stringify({}),
     };
     architectApi.postFlowsDatatableRows(datatable_id, body)
         .then(() => {
@@ -94,6 +96,7 @@ export async function getConfigurationDataFromGenesys(datatable_id, version) {
             global_data.meta = safeParse(data.meta, {})
             global_data.diys = safeParse(data.diy, [])
             global_data.info_agents = safeParse(data.info_agents, {})
+            global_data.basic_missions = safeParse(data.basic_missions, {})
         })
         .catch(err => {
             window.Alpine.store("toast").show(`Error beim Laden von ${version}`, "error");
