@@ -30,6 +30,7 @@ export async function syncConfigurationToGenesys(datatable_id, version) {
             diy: JSON.stringify(global_data.diys),
             info_agents: JSON.stringify(global_data.info_agents),
             basic_missions: JSON.stringify(global_data.basic_missions),
+            faqs: JSON.stringify(global_data.faqs),
         }
     };
     architectApi.putFlowsDatatableRow(datatable_id, version, data)
@@ -54,6 +55,7 @@ export async function newConfigurationToGenesys(datatable_id, version) {
         diy: JSON.stringify([]),
         info_agents: JSON.stringify({}),
         basic_missions: JSON.stringify({}),
+        faqs: JSON.stringify({}),  
     };
     architectApi.postFlowsDatatableRows(datatable_id, body)
         .then(() => {
@@ -97,6 +99,7 @@ export async function getConfigurationDataFromGenesys(datatable_id, version) {
             global_data.diys = safeParse(data.diy, [])
             global_data.info_agents = safeParse(data.info_agents, {})
             global_data.basic_missions = safeParse(data.basic_missions, {})
+            global_data.faqs = safeParse(data.faqs, {}) 
         })
         .catch(err => {
             window.Alpine.store("toast").show(`Error beim Laden von ${version}`, "error");
@@ -140,7 +143,7 @@ export async function fetchQueuesFromGenesys() {
 }
 
 // Done
-export async function loadFaqsFromKnowledgeBaseGenesys(kb_id) {
+export async function loadArticlesFromKnowledgeBaseGenesys(kb_id) {
     console.log(`Connectiong to knowledgebase: "${kb_id}"`);
     const kbApi = window.Alpine.store("genesys").kbApi
     kbApi.getKnowledgeKnowledgebaseDocuments(kb_id, {pageSize: 100})
@@ -149,7 +152,7 @@ export async function loadFaqsFromKnowledgeBaseGenesys(kb_id) {
                 const bodyText = vars.entities?.[0]?.body?.blocks?.[0]?.paragraph?.blocks?.[0]?.text?.text || '';
                 let global_data = window.Alpine.store("globalData")
                 global_data.resetUI();
-                global_data.faqs[doc.id] = {
+                global_data.articles[doc.id] = {
                     id: doc.id,
                     knowledge_base_id: kb_id,
                     title: doc.title,
@@ -160,7 +163,7 @@ export async function loadFaqsFromKnowledgeBaseGenesys(kb_id) {
                 };
             })
         )))
-        .then(() => console.log('FAQs loaded from knowledge base:', window.Alpine.store("globalData").faqs))
+        .then(() => console.log('ARTICLEs loaded from knowledge base:', window.Alpine.store("globalData").articles))
         .catch(err => console.error('Error loading KB articles:', err));
 }
 

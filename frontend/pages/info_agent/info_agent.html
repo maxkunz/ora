@@ -32,12 +32,12 @@
                     <label class="text-sm font-semibold">Inhalte auswählen:</label>
                     <div class="grid grid-cols-2 gap-4">
 
-                        <!-- Left Side: FAQs -->
+                        <!-- Left Side: ARTICLEs -->
                         <div class="border rounded p-2 max-h-64 overflow-y-auto">
-                        <h4 class="text-xs font-bold mb-1">FAQs</h4>
-                        <template  x-for="[id, faq] of Object.entries($store.globalData.faqs)" :key="id">
-                            <div x-show="!isAlreadyInTraining('faq', id)" @click="addTrainingItem('faq', id)" class="flex justify-between items-center text-xs border-b py-1">
-                            <span class="truncate w-4/5" x-text="faq.title"></span>
+                        <h4 class="text-xs font-bold mb-1">ARTICLEs</h4>
+                        <template  x-for="[id, article] of Object.entries($store.globalData.articles)" :key="id">
+                            <div x-show="!isAlreadyInTraining('article', id)" @click="addTrainingItem('article', id)" class="flex justify-between items-center text-xs border-b py-1">
+                            <span class="truncate w-4/5" x-text="article.title"></span>
                             <span class="text-green-600">＋</span>
                             </div>
                         </template>

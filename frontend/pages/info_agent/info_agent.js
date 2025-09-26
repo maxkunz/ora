@@ -3,7 +3,7 @@ import {loadDocumentsFromWorkspaceGenesys} from '../../js/genesys_helper.js';
 
 export function infoAgentModule() {
   return {
-    selectedFaqId: '',
+    selectedArticleId: '',
     selectedDocId: '',
     trainingsContent: [],
 
@@ -21,7 +21,7 @@ export function infoAgentModule() {
     isAlreadyInTraining(type, id) {
         const store = Alpine.store("globalData");
         const agent = store.info_agents[store.selectedInfoAgentId];
-        return agent.trainingsContent.some(item => item.type === (type === 'faq' ? 'article' : 'pdf') && item.id === id);
+        return agent.trainingsContent.some(item => item.type === (type === 'article' ? 'article' : 'pdf') && item.id === id);
     },
 
     addTrainingItem(type, id) {
@@ -29,12 +29,12 @@ export function infoAgentModule() {
       const agent = store.info_agents[store.selectedInfoAgentId];
       if (!agent) return;
 
-      const item = type === "faq"
+      const item = type === "article"
         ? {
             type: "article",
             id,
-            title: store.faqs[id]?.title ?? "FAQ",
-            knowledge_base_id: store.faqs[id]?.knowledge_base_id,
+            title: store.articles[id]?.title ?? "ARTICLE",
+            knowledge_base_id: store.articles[id]?.knowledge_base_id,
             already_uploaded: false,
             flags: { force_reindex: false, delete_before_upload: false, delete: false },
             tenant_id: store.client_id,

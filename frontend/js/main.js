@@ -8,6 +8,7 @@ import {AIGenService} from './AIGenService.js';
 import { setupWizard } from './setup_wizard.js';
 import '../css/styles.css';
 import { infoAgentModule } from "../pages/info_agent/info_agent.js";
+import { faqModule } from "../pages/faq/faq.js";
 import { basicMissionsModule} from "../pages/basic_missions/basic_missions.js";
 
 
@@ -22,6 +23,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('alpine:init', () => {
     Alpine.data("infoAgentModule", infoAgentModule);
+    Alpine.data("faqModule", faqModule);
     Alpine.data("basicMissionsModule", basicMissionsModule);
 
     window.Alpine.store('genesys', {
@@ -51,11 +53,13 @@ document.addEventListener('alpine:init', () => {
         concerns: [],
         targets: {},
         matrix: {},
-        faqs: {},
+        articles: {},
         guides: {},
         diys: [],
         info_agents: {},
         basic_missions: {},
+        announcement: [],
+        faqs: {},
 
         fileMenu: {
             showNewInput: false,
@@ -80,7 +84,7 @@ document.addEventListener('alpine:init', () => {
         typeColors: {
             queue: 'bg-amber-100  text-amber-800',
             generic: 'bg-amber-100  text-amber-800',
-            faq: 'bg-teal-100 text-teal-800',
+            article: 'bg-teal-100 text-teal-800',
             diy: 'bg-sky-100    text-sky-800',
             guide: 'bg-lime-100 text-lime-800',
             info_agent: 'bg-emerald-100 text-emerald-800',
@@ -90,7 +94,7 @@ document.addEventListener('alpine:init', () => {
             target: 'bg-gray-100 text-gray-700',   // bewusst neutral gehalten
             generic: 'bg-[#FFBF7F] text-black',    // sanftes Pastell-Orange
             guide: 'bg-[#BCB550] text-black',      // Olivgrün, wie gewünscht
-            faq: 'bg-[#F2FEDC] text-black',        // sehr helles Grün, freundlich
+            article: 'bg-[#F2FEDC] text-black',        // sehr helles Grün, freundlich
             info_agent: 'bg-[#BCB550] text-black', // gleiche Farbe wie guide
             basic_mission: 'bg-[#FFFDBF] text-black',
             diy: 'bg-[#FDC5A5] text-black',        // leichtes Pastell-Korall
@@ -114,7 +118,7 @@ document.addEventListener('alpine:init', () => {
             this.selectedInfoAgentId = null;
             this.selectedDiyIndex = null;
             this.selectedTargetId = null;
-            this.selectedFaqId = null;
+            this.selectedArticleId = null;
             this.selectedGuideId = null;
             this.editType = null;
             this.editItem = null;
@@ -131,9 +135,9 @@ document.addEventListener('alpine:init', () => {
 
             console.log("UI reseted.");
         },
-        selectedFaqId: null,
-        get selectedFaq() {
-            return Alpine.store("globalData").selectedFaqId ? Alpine.store("globalData").faqs[Alpine.store("globalData").selectedFaqId] : null;
+        selectedArticleId: null,
+        get selectedArticle() {
+            return Alpine.store("globalData").selectedArticleId ? Alpine.store("globalData").articles[Alpine.store("globalData").selectedArticleId] : null;
         },
         selectedGuideId: null,
         get selectedGuide() {
@@ -204,10 +208,10 @@ document.addEventListener('alpine:init', () => {
                     type: Alpine.store("globalData").selectedTarget.type,
                     value: Alpine.store("globalData").selectedTarget.id
                 });
-            } else if (Alpine.store("globalData").activeTab === 'faqs' && Alpine.store("globalData").selectedFaq) {
+            } else if (Alpine.store("globalData").activeTab === 'articles' && Alpine.store("globalData").selectedArticle) {
                 Alpine.store("globalData").matrixSet(catId, conId, {
-                    type: 'faq',
-                    value: Alpine.store("globalData").selectedFaq.id
+                    type: 'article',
+                    value: Alpine.store("globalData").selectedArticle.id
                 });
             } else if (Alpine.store("globalData").activeTab === 'guides' && Alpine.store("globalData").selectedGuide) {
                 Alpine.store("globalData").matrixSet(catId, conId, {
@@ -286,14 +290,14 @@ route: {
 
   // Generische Definition aller auswählbaren Module (kompakt: 1 Modul/Zeile)
   selectable: {
-    order: { end: ['disconnect','concierge','target','diy'], mid: ['idnv', 'faq','guide','info_agent', 'basic_mission'] },
+    order: { end: ['disconnect','concierge','target','diy'], mid: ['idnv', 'article','guide','info_agent', 'basic_mission'] },
     modules: {
       disconnect: { label:'Disconnect',   value:'disconnect' },
       idnv: { label:'ID&V',   value:'idnv' },
       concierge:    { label:'Concierge',      value:'concierge' },
       target:     { label:'Routing',       value:['Routing'] },
       diy:        { label:'DIY',          value:['DIY'] },
-      faq:        { label:'Basic Info',          value:['Basic Info'] },
+      article:        { label:'Basic Info',          value:['Basic Info'] },
       guide:      { label:'AI Mission',       value:['AI Mission'] },
       info_agent: { label:'AI Info',  value:['AI Info'] },
       basic_mission: { label:'Basic Mission',  value:['Basic Mission'] },
@@ -447,7 +451,7 @@ closeRouteModal() {
             };
         },
         newAnswer() {
-            return {keywords: [], Type: 'faq', Legitimation: false, Target: [{}]}
+            return {keywords: [], Type: 'article', Legitimation: false, Target: [{}]}
         },
 
         labelForSelection(target) {
@@ -477,10 +481,10 @@ closeRouteModal() {
                     type: Alpine.store("globalData").selectedTarget.type,
                     value: Alpine.store("globalData").selectedTarget.id
                 };
-            } else if (Alpine.store("globalData").activeTab === 'faqs' && Alpine.store("globalData").selectedFaq) {
+            } else if (Alpine.store("globalData").activeTab === 'articles' && Alpine.store("globalData").selectedArticle) {
                 target = {
-                    type: 'faq',
-                    value: Alpine.store("globalData").selectedFaq.id
+                    type: 'article',
+                    value: Alpine.store("globalData").selectedArticle.id
                 };
             }
             console.log("Target: " + JSON.stringify(target))
@@ -513,9 +517,9 @@ closeRouteModal() {
                 },
                 {
                     group: 'Basic Info',
-                    items: Object.values(Alpine.store("globalData").faqs).map(f => ({
+                    items: Object.values(Alpine.store("globalData").articles).map(f => ({
                         key: f.id,
-                        value: {type: 'faq', value: f.id},
+                        value: {type: 'article', value: f.id},
                         label: f.title
                     }))
                 },
@@ -755,8 +759,8 @@ closeRouteModal() {
                             })
                             genesys.getFlowResources("3225de50-1e9b-4103-85d0-cafe95f4a11f").then(() => {
                                 console.log("Got Flows.")
-                                genesys.loadFaqsFromKnowledgeBaseGenesys(window.Alpine.store("globalData").resources.knowledgeBaseId).then(() => {
-                                    console.log("Got FAQs from KB_ID.")
+                                genesys.loadArticlesFromKnowledgeBaseGenesys(window.Alpine.store("globalData").resources.knowledgeBaseId).then(() => {
+                                    console.log("Got ARTICLEs from KB_ID.")
                                 })
 
                             })

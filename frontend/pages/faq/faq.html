@@ -1,0 +1,189 @@
+<!-- /pages/faq/faq.html -->
+<div x-data="faqModule()" x-init="init()" class="h-full overflow-y-auto p-8 space-y-6">
+
+  <!-- Titel -->
+  <h1 class="text-2xl font-bold text-center">FAQ Themen</h1>
+  
+  <!-- Cards -->
+  <template x-for="([id, t], idx) in Object.entries($store.globalData.faqs)" :key="id">
+    <section
+      class="group border border-gray-200 rounded-2xl bg-white shadow-sm hover:shadow-md transition-shadow"
+      @click="openExclusive(id)"
+    >
+      <!-- Zweispaltiges Layout -->
+      <div class="grid grid-cols-[300px_1fr]">
+        <!-- Linke Spalte: nur Themen-Input, vertikal zentriert -->
+        <div class="relative border-r border-gray-200 my-2">
+          <div class="absolute inset-0 flex items-center justify-center p-4">
+            <div class="w-full flex justify-center">
+              <div class="w-[240px]" x-data="{editing:true,hover:false,focus:false}">
+                <!-- Anzeige mit Ellipsis -->
+                <div x-show="!editing"
+                     class="px-2 py-1 text-base font-bold truncate cursor-text"
+                     @click.stop="editing=true; $nextTick(()=> $refs.topic.focus())"
+                     x-text="$store.globalData.faqs[id].topic || 'Thema'"></div>
+                <!-- Edit -->
+                <input
+                  x-ref="topic"
+                  x-show="editing"
+                  type="text"
+                  x-model="$store.globalData.faqs[id].topic"
+                  placeholder="Thema"
+                  @blur="editing=false"
+                  class="w-full outline-none bg-transparent transition-all px-2 py-1 text-base font-bold
+                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  :class="[
+                    ($store.globalData.faqs[id].topic?.trim())
+                      ? 'border-0'
+                      : 'border border-gray-300 rounded'
+                  ]"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rechte Spalte: Inhalte -->
+        <div class="relative p-4">
+          <!-- Inhalte in sauberer Fluchtlinie: 3 Spalten (Label | Feld | Platz/Icon) -->
+          <div class="grid grid-cols-[80px_1fr_28px] gap-x-4 gap-y-3">
+
+            <!-- Auskunft -->
+            <label class="text-sm font-semibold text-right leading-8">Auskunft:</label>
+            <div
+              x-data="{hover:false,focus:false}"
+              @mouseenter="hover=true" @mouseleave="hover=false"
+              class="relative"
+              @click.stop
+            >
+              <textarea
+                x-model="$store.globalData.faqs[id].defaultAnswer"
+                placeholder="Allgemeine Auskunft / Default-Antwort"
+                @focus="focus=true" @blur="focus=false"
+                @click.stop
+                class="w-full h-fit text-sm px-2 py-1 bg-white outline-none transition-all
+                       focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                :class="[
+                  (focus || hover || !$store.globalData.faqs[id].defaultAnswer?.trim())
+                    ? 'border border-gray-300 rounded'
+                    : 'border-0 border-b border-gray-300 rounded-none bg-transparent'
+                ]"
+              ></textarea>
+            </div>
+            <!-- Toggle-Icon rechts neben Auskunft -->
+            <button
+              @click.stop="toggleButton(id)"
+              class="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 mt-1"
+              :title="collapsed[id] ? 'Aufklappen' : 'Zuklappen'">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 transition-transform duration-200"
+                   :class="collapsed[id] ? '' : 'rotate-180'" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+
+            <!-- Q/A-Liste: nur sichtbar wenn offen -->
+            <template x-if="!collapsed[id]">
+              <div class="col-span-3 space-y-3">
+                <template x-for="(qa, qidx) in $store.globalData.faqs[id].faq" :key="qidx">
+                  <!-- Zeile Q -->
+                  <div class="grid grid-cols-[80px_1fr_28px] gap-x-4 items-center">
+                    <label class="text-xs font-semibold text-right leading-8">Q:</label>
+                    <div x-data="{hover:false,focus:false}" @click.stop @mouseenter="hover=true" @mouseleave="hover=false">
+                      <input
+                        type="text"
+                        @click.stop
+                        x-model="$store.globalData.faqs[id].faq[qidx].question"
+                        placeholder="Frage eingeben…"
+                        @focus="focus=true" @blur="focus=false"
+                        class="w-full text-sm px-2 py-1 bg-white outline-none transition-all
+                               focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        :class="[
+                          (focus || hover || !$store.globalData.faqs[id].faq[qidx].question?.trim())
+                            ? 'border border-gray-300 rounded'
+                            : 'border-0 border-b border-gray-300 rounded-none bg-transparent'
+                        ]"
+                      />
+                    </div>
+                    <!-- X-Button in Q-Zeile -->
+                    <button
+                      @click="removeQA(id, qidx)"
+                      class="w-6 h-6 flex items-center justify-center rounded text-red-600 hover:bg-red-50"
+                      title="Frage löschen">
+                      <span class="text-xs font-bold">x</span>
+                    </button>
+
+                    <!-- Zeile A -->
+                    <label class="text-xs font-semibold text-right leading-8">A:</label>
+                    <div x-data="{hover:false,focus:false}"
+                         @mouseenter="hover=true" @mouseleave="hover=false"
+                         class="col-span-1"
+                         @click.stop>
+                      <input
+                        type="text"
+                        @click.stop
+                        x-model="$store.globalData.faqs[id].faq[qidx].answer"
+                        placeholder="Antwort eingeben…"
+                        @focus="focus=true" @blur="focus=false"
+                        class="w-full text-sm px-2 py-1 bg-white outline-none transition-all
+                               focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        :class="[
+                          (focus || hover || !$store.globalData.faqs[id].faq[qidx].answer?.trim())
+                            ? 'border border-gray-300 rounded'
+                            : 'border-0 border-b border-gray-300 rounded-none bg-transparent'
+                        ]"
+                      />
+                    </div>
+                    <div></div> <!-- Platzhalter -->
+                  </div>
+                </template>
+
+                <!-- Aktionszeile: Button mittig; Löschen-Icon unten rechts -->
+                <div class="relative grid grid-cols-[80px_1fr_28px]">
+                  <div></div>
+                  <div class="flex items-center justify-center pt-2">
+                    <button
+                      @click="addQA(id)"
+                      class="text-xs px-3 py-1 rounded-2xl border border-dashed hover:border-solid hover:bg-gray-50">
+                      Frage/Antwort hinzufügen
+                    </button>
+                  </div>
+                  <button
+                    @click="removeTopic(id)"
+                    class="absolute right-0 bottom-0 mb-2 mr-2 w-8 h-8 flex items-center justify-center
+                           rounded hover:bg-red-50 text-red-600"
+                    title="Thema löschen">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                      <path d="M10 11v6M14 11v6" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </section>
+  </template>
+
+  <!-- Leerzustand -->
+  <div x-show="Object.keys($store.globalData.faqs).length === 0" class="text-sm text-gray-500 text-center">
+    Noch keine Themen vorhanden. Legen Sie unten ein neues Thema an.
+  </div>
+
+  <!-- Neues Thema -->
+  <div class="pt-2 flex justify-center">
+    <button
+      @click="addTopic()"
+      class="flex items-center gap-2 px-5 py-2 rounded-2xl border border-dashed hover:border-solid hover:bg-gray-50">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"
+           viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+      <span class="text-sm">Neues Thema</span>
+    </button>
+  </div>
+</div>

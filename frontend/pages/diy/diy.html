@@ -151,7 +151,7 @@
 
                                     <div class="flex items-center space-x-2">
                                         <label class="text-xs font-bold text-gray-700">Ziel</label>
-                                        <!-- Target selector for FAQ/target -->
+                                        <!-- Target selector for ARTICLE/target -->
                                         <template x-for="(target, i) in answer.Target" :key="'target-' + i">
                                             <div x-data="{ targetSelectionOpen: false, openGrp: null }"
                                                 class="flex items-center space-x-2 relative mt-1"
@@ -160,7 +160,7 @@
                                                 <button
                                                         @click="
                                         if (!targetSelectionOpen) {
-                                        const groups = $store.globalData.groupedOptions(i === 0 ? ['Targets', 'FAQs'] : ['Targets']);
+                                        const groups = $store.globalData.groupedOptions(i === 0 ? ['Targets', 'ARTICLEs'] : ['Targets']);
                                         openGrp = groups.length ? groups[0].group : null;
                                         }
                                         targetSelectionOpen = !targetSelectionOpen;
@@ -181,7 +181,7 @@
                                                 >
                                                     <!-- Groups -->
                                                     <template
-                                                            x-for="group in $store.globalData.groupedOptions(i === 0 ? ['Targets', 'FAQs'] : ['Targets'])"
+                                                            x-for="group in $store.globalData.groupedOptions(i === 0 ? ['Targets', 'ARTICLEs'] : ['Targets'])"
                                                             :key="group.group"
                                                     >
                                                         <div>
@@ -207,7 +207,7 @@
                                                     }
                                                 } else {
                                                     answer.Target[i] = item.value;
-                                                    if (i == 0 && item.value.type !== 'faq') {
+                                                    if (i == 0 && item.value.type !== 'article') {
                                                     answer.Target.splice(1, 1);
                                                     }
                                                     targetSelectionOpen = false;
@@ -239,7 +239,7 @@
                                         </template>
                                         <!-- Add Target Button -->
                                         <div class="flex items-center space-x-2 mt-1"
-                                            x-show="answer.Target.length === 1 && answer.Target[0]?.type === 'faq'">
+                                            x-show="answer.Target.length === 1 && answer.Target[0]?.type === 'article'">
                                             <button
                                                     class="text-xs text-white border bg-green-600 border-green-600 px-2 py-0.5 rounded hover:bg-green-700"
                                                     @click="answer.Target.push({ type: '', value: '' })"
