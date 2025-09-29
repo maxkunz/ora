@@ -45,10 +45,8 @@ document.addEventListener('alpine:init', () => {
         openMetaModal: false,
         openAIModal: false,
         AIGenService: null,
-        meta: {
-            businessContext: ""
-        },
 
+        meta: { businessContext: "" },
         categories: [],
         concerns: [],
         targets: {},
@@ -202,34 +200,6 @@ document.addEventListener('alpine:init', () => {
             }
             Alpine.store("globalData").matrix[catId][conId] = val;
         },
-        matrixQuickSet(catId, conId) {
-            if (Alpine.store("globalData").activeTab === 'targets' && Alpine.store("globalData").selectedTarget) {
-                Alpine.store("globalData").matrixSet(catId, conId, {
-                    type: Alpine.store("globalData").selectedTarget.type,
-                    value: Alpine.store("globalData").selectedTarget.id
-                });
-            } else if (Alpine.store("globalData").activeTab === 'articles' && Alpine.store("globalData").selectedArticle) {
-                Alpine.store("globalData").matrixSet(catId, conId, {
-                    type: 'article',
-                    value: Alpine.store("globalData").selectedArticle.id
-                });
-            } else if (Alpine.store("globalData").activeTab === 'guides' && Alpine.store("globalData").selectedGuide) {
-                Alpine.store("globalData").matrixSet(catId, conId, {
-                    type: 'guide',
-                    value: Alpine.store("globalData").selectedGuide.id
-                });
-            } else if (Alpine.store("globalData").activeTab === 'diys' && Alpine.store("globalData").selectedDiy) {
-                Alpine.store("globalData").matrixSet(catId, conId, {
-                    type: 'diy',
-                    value: Alpine.store("globalData").selectedDiy.id
-                });
-            } else if (Alpine.store("globalData").activeTab === 'info_agents' && Alpine.store("globalData").selectedDiy) {
-                Alpine.store("globalData").matrixSet(catId, conId, {
-                    type: 'info_agent',
-                    value: Alpine.store("globalData").selectedInfoAgent.agent_id
-                });
-            }
-        },
         matrixUnset(catId, conId) {
             if (Alpine.store("globalData").matrix[catId]) {
                 delete Alpine.store("globalData").matrix[catId][conId];
@@ -278,37 +248,34 @@ document.addEventListener('alpine:init', () => {
         //////////////////////////////////
         // State (Beispiel)
 route: {
-  open: false,
-  cell: null,
-  selectedIndex: null,
+    open: false,
+    cell: null,
+    selectedIndex: null,
 
-  // Draft hält nur lowercase type + optional value (keine Namenskopie)
-  draft: {
-    name: 'Neue Route',
-    modules: [{ type: 'disconnect' }], // letzter Eintrag ist das End-Modul
-  },
-
-  // Generische Definition aller auswählbaren Module (kompakt: 1 Modul/Zeile)
-  selectable: {
-    order: { end: ['disconnect','concierge','target','diy'], mid: ['idnv', 'article','guide','info_agent', 'basic_mission'] },
-    modules: {
-      disconnect: { label:'Disconnect',   value:'disconnect' },
-      idnv: { label:'ID&V',   value:'idnv' },
-      concierge:    { label:'Concierge',      value:'concierge' },
-      target:     { label:'Routing',       value:['Routing'] },
-      diy:        { label:'DIY',          value:['DIY'] },
-      article:        { label:'Basic Info',          value:['Basic Info'] },
-      guide:      { label:'AI Mission',       value:['AI Mission'] },
-      info_agent: { label:'AI Info',  value:['AI Info'] },
-      basic_mission: { label:'Basic Mission',  value:['Basic Mission'] },
-    },
-  },
+    // Draft hält nur lowercase type + optional value (keine Namenskopie)
+    draft: {
+        name: 'Neue Route',
+        modules: [{ type: 'disconnect' }], // letzter Eintrag ist das End-Modul
+    }
 },
 
 resolveRouteTypeToLabel(type) {
-  if (!type) return '—'; // kein Typ übergeben
-  const mod = this.route?.selectable?.modules?.[type];
-  return mod?.label ?? type; // Fallback: label, sonst raw type zurückgeben
+	if (!type) return '—';
+	// Alle Gruppen (inkl. simple) laden; Signatur bleibt unverändert
+	const groups = this.groupedOptions(); // ohne Filter => alle Gruppen
+
+	for (const g of groups) {
+		if (Array.isArray(g.items)) {
+			// datengetriebene Gruppe: alle Items teilen denselben value.type
+			const first = g.items[0];
+			if (first?.value?.type === type) return g.group;
+		} else if (g?.items?.value?.type === type) {
+			// simple Gruppe (items ist ein einzelnes Objekt)
+			return g.group;
+		}
+	}
+	// Fallback: unbekannter Typ
+	return type;
 },
 
 openRouteModal(categoryId, concernId, categoryName, concernName) {
@@ -336,7 +303,6 @@ saveRouteModal() {
   if (!this.route.cell) return;
   const { categoryId, concernId } = this.route.cell;
 
-  // Draft 1:1 speichern
   this.matrixSet(categoryId, concernId, {
     type: 'route',
     value: JSON.parse(JSON.stringify(this.route.draft)),
@@ -501,17 +467,48 @@ closeRouteModal() {
             }
             Alpine.store("globalData").matrix[catId][conId] = val;
         },
-        flatOptions(includedGroups = []) {      // ungegroupte Liste, um Label-Suche zu erleichtern
-            return Alpine.store("globalData").groupedOptions(includedGroups).flatMap(g => g.items);
+        flatOptions(includedGroups = []) {
+            return Alpine.store("globalData")
+                .groupedOptions(includedGroups)
+                .flatMap(g => Array.isArray(g.items) ? g.items : [g.items]);
         },
         // Provide grouped list for the dropdown
         groupedOptions(includedGroups = []) {
-            const allGroups = [
+            // --- Simple Module als eigene Gruppen (items = Objekt) ---
+            const simpleGroups = [
+                {
+                    group: 'Disconnect',
+                    items: {
+                        key: 'disconnect',
+                        value: { type: 'disconnect', value: null },
+                        label: 'Disconnect'
+                    }
+                },
+                {
+                    group: 'ID&V',
+                    items: {
+                        key: 'idnv',
+                        value: { type: 'idnv', value: null },
+                        label: 'ID&V'
+                    }
+                },
+                {
+                    group: 'Concierge',
+                    items: {
+                        key: 'concierge',
+                        value: { type: 'concierge', value: null },
+                        label: 'Concierge'
+                    }
+                }
+            ];
+
+            // --- Bestehende, datengetriebene Gruppen (items = Array) ---
+            const dataDrivenGroups = [
                 {
                     group: 'Routing',
                     items: Object.values(Alpine.store("globalData").targets).map(t => ({
                         key: t.id,
-                        value: {type: "target", value: t.id},
+                        value: { type: "target", value: t.id },
                         label: t.value
                     }))
                 },
@@ -519,7 +516,7 @@ closeRouteModal() {
                     group: 'Basic Info',
                     items: Object.values(Alpine.store("globalData").articles).map(f => ({
                         key: f.id,
-                        value: {type: 'article', value: f.id},
+                        value: { type: 'article', value: f.id },
                         label: f.title
                     }))
                 },
@@ -535,7 +532,7 @@ closeRouteModal() {
                     group: 'DIY',
                     items: Object.values(Alpine.store("globalData").diys).map(f => ({
                         key: f.id,
-                        value: {type: 'diy', value: f.id},
+                        value: { type: 'diy', value: f.id },
                         label: f.Name
                     }))
                 },
@@ -543,7 +540,7 @@ closeRouteModal() {
                     group: 'AI Info',
                     items: Object.values(Alpine.store("globalData").info_agents).map(f => ({
                         key: f.agent_id,
-                        value: {type: 'info_agent', value: f.agent_id},
+                        value: { type: 'info_agent', value: f.agent_id },
                         label: f.name
                     }))
                 },
@@ -551,12 +548,15 @@ closeRouteModal() {
                     group: 'Basic Mission',
                     items: Object.values(Alpine.store("globalData").basic_missions).map(f => ({
                         key: f.id,
-                        value: {type: 'basic_mission', value: f.id},
+                        value: { type: 'basic_mission', value: f.id },
                         label: f.name
                     }))
                 }
             ];
-            // return all if no filter applied
+
+            const allGroups = [...simpleGroups, ...dataDrivenGroups];
+
+            // vorhandenes Filterverhalten beibehalten
             if (!includedGroups || includedGroups.length === 0) {
                 return allGroups;
             }

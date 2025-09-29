@@ -162,8 +162,8 @@
                                 <button
                                         x-show="kw.startsWith('*')"
                                         @click="
-                        $store.globalData.editItem.keywords[index] = kw.replace(/^\*\s*/, '');
-                      "
+                                          $store.globalData.editItem.keywords[index] = kw.replace(/^\*\s*/, '');
+                                        "
                                         class="text-green-600 text-xs hover:text-green-800"
                                         title="Bestätigen"
                                 >✔
@@ -278,346 +278,328 @@
     <!--------------------------------------
      ROUTE Modal 
      --------------------------------------->
-<!-- ROUTE MODAL (generisch aus route.selectable) -->
-<template x-if="$store.globalData.route.open">
-  <div class="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center">
-    <!-- ca. -20% Höhe -->
-    <div class="bg-white w-[76rem] max-w-[95vw] h-[576px] rounded-lg shadow-lg overflow-hidden flex flex-col">
+    <template x-if="$store.globalData.route.open">
+      <div class="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center">
+        <!-- ca. -20% Höhe -->
+        <div class="bg-white w-[76rem] max-w-[95vw] h-[576px] rounded-lg shadow-lg overflow-hidden flex flex-col">
 
-      <!-- Header -->
-      <div class="flex items-center justify-between px-4 py-3 border-b">
-        <div>
-          <h2 class="text-lg font-semibold">Edit Route</h2>
-          <div class="text-xs text-gray-500">
-            <span x-text="'Category: ' + ($store.globalData.route.cell?.categoryName ?? '-')"></span>
-            <span class="mx-1">·</span>
-            <span x-text="'Concern: ' + ($store.globalData.route.cell?.concernName ?? '-')"></span>
+          <!-- Header -->
+          <div class="flex items-center justify-between px-4 py-3 border-b">
+            <div>
+              <h2 class="text-lg font-semibold">Edit Route</h2>
+              <div class="text-xs text-gray-500">
+                <span x-text="'Category: ' + ($store.globalData.route.cell?.categoryName ?? '-')"></span>
+                <span class="mx-1">·</span>
+                <span x-text="'Concern: ' + ($store.globalData.route.cell?.concernName ?? '-')"></span>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <!-- Body -->
-      <div class="flex-1 grid grid-cols-12 overflow-hidden" x-data="{ dragIndex: null, openPanel: null, routeNameLocked:false }">
+          <!-- Body -->
+          <div class="flex-1 grid grid-cols-12 overflow-hidden" x-data="{ dragIndex: null, openPanel: null, routeNameLocked:false }">
 
-        <!-- LEFT: Module-Liste (End = letztes Modul) -->
-        <div class="col-span-4 border-r overflow-hidden">
-          <div class="h-full flex flex-col">
-            <div class="flex items-center gap-2 p-3 border-b">
-              <div class="text-sm font-semibold">Route</div>
-              <input type="text" class="flex-1 border rounded px-2 py-1 text-xs" placeholder="Neue Route"
-                     x-model="$store.globalData.route.draft.name">
-              <button class="text-xs px-2 py-0.5 rounded bg-green-600 text-white"
-                      @click="
-                        $store.globalData.route.draft.modules.splice(
-                          $store.globalData.route.draft.modules.length-1, 0, { type:'article' }
-                        );
-                        $store.globalData.route.selectedIndex = $store.globalData.route.draft.modules.length-2;
-                      ">
-                + Modul
-              </button>
+            <!-- LEFT: Module-Liste (End = letztes Modul) -->
+            <div class="col-span-4 border-r overflow-hidden">
+              <div class="h-full flex flex-col">
+                <div class="flex items-center gap-2 p-3 border-b">
+                  <div class="text-sm font-semibold">Route</div>
+                  <input type="text" class="flex-1 border rounded px-2 py-1 text-xs" placeholder="Neue Route"
+                        x-model="$store.globalData.route.draft.name">
+                  <button class="text-xs px-2 py-0.5 rounded bg-green-600 text-white"
+                          @click="
+                            $store.globalData.route.draft.modules.splice(
+                              $store.globalData.route.draft.modules.length-1, 0, { type:'article' }
+                            );
+                            $store.globalData.route.selectedIndex = $store.globalData.route.draft.modules.length-2;
+                          ">
+                    + Modul
+                  </button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-3 space-y-2">
+                  <!-- MID MODULES (all but not last) -->
+                  <template x-for="(mod, i) in $store.globalData.route.draft.modules.slice(0, $store.globalData.route.draft.modules.length-1)" :key="'mid-'+i">
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <button
+                          class="w-full text-left px-2 py-2 rounded border transition hover:bg-gray-50 flex items-start gap-2"
+                          :class="{
+                            'bg-blue-50 border-blue-300': $store.globalData.route.selectedIndex===i,
+                            'border-gray-200': $store.globalData.route.selectedIndex!==i
+                          }"
+                          draggable="true"
+                          @dragstart="dragIndex = i; $event.dataTransfer.effectAllowed='move'; $event.dataTransfer.setDragImage($el,16,16)"
+                          @dragover.prevent="$event.dataTransfer.dropEffect='move'"
+                          @drop="
+                            (() => {
+                              const mods = $store.globalData.route.draft.modules;
+                              const to = i;
+                              if(dragIndex===null || dragIndex===to) return;
+                              const end = mods.pop();       // End temporär entnehmen
+                              const [m] = mods.splice(dragIndex,1);
+                              mods.splice(to,0,m);
+                              mods.push(end);               // End zurück
+                              $store.globalData.route.selectedIndex = to;
+                              dragIndex = null;
+                            })()
+                          "
+                          @click="$store.globalData.route.selectedIndex = i">
+
+                          <!-- Mid-Icon: vertikaler Balken -->
+                          <svg class="shrink-0 h-8 w-5 text-gray-700" viewBox="0 0 20 40" fill="currentColor" aria-hidden="true">
+                            <rect x="9" y="2" width="2" height="30" rx="1"></rect>
+                          </svg>
+
+                          <div class="min-w-0">
+                            <!-- Typ (mod.type) -->
+                            <div class="text-xs font-medium truncate" x-text="$store.globalData.resolveRouteTypeToLabel(mod.type) || '—'"></div>
+                            <div class="text-[10px] text-gray-500 truncate"
+                                x-text="$store.globalData.labelForSelection(mod)"></div>
+                          </div>
+                        </button>
+
+                        <!-- delete -->
+                        <button class="text-[10px] text-red-600 px-1" title="Entfernen"
+                                @click="const mods = $store.globalData.route.draft.modules;
+                                        mods.splice(i,1);
+                                        $store.globalData.route.selectedIndex = mods.length - 1;">✕</button>
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- END MODULE (letztes Element) -->
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <button
+                        class="w-full text-left px-2 py-2 rounded border transition hover:bg-gray-50 flex items-start gap-2"
+                        :class="{
+                          'bg-blue-50 border-blue-300': $store.globalData.route.selectedIndex===($store.globalData.route.draft.modules.length-1),
+                          'border-gray-200': $store.globalData.route.selectedIndex!==($store.globalData.route.draft.modules.length-1) }"
+                        @click="$store.globalData.route.selectedIndex = $store.globalData.route.draft.modules.length-1">
+
+                        <!-- End-Icon: Balken + Kreis -->
+                        <svg class="shrink-0 h-8 w-5 text-gray-700" viewBox="0 0 20 40" fill="currentColor" aria-hidden="true">
+                          <rect x="9" y="2" width="2" height="30" rx="1"></rect>
+                          <circle cx="10" cy="35" r="3"></circle>
+                        </svg>
+
+                        <div class="min-w-0">
+                          <!-- Typ -->
+                          <div class="text-xs font-medium truncate"
+                              x-text="$store.globalData.resolveRouteTypeToLabel($store.globalData.route.draft.modules.at(-1)?.type) || 'disconnect'"></div>
+                          <!-- Name -->
+                          <div class="text-[10px] text-gray-500 truncate"
+                              x-text="$store.globalData.labelForSelection($store.globalData.route.draft.modules.at(-1))"></div>
+                        </div>
+                      </button>
+                      <div class="w-[1.25rem]"></div> <!-- no delete -->
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-3 space-y-2">
-              <!-- MID MODULES (all but not last) -->
-              <template x-for="(mod, i) in $store.globalData.route.draft.modules.slice(0, $store.globalData.route.draft.modules.length-1)" :key="'mid-'+i">
-                <div>
-                  <div class="flex items-center gap-2">
+            <!-- MIDDLE: generics Accordeon -->
+            <div class="col-span-4 border-r overflow-y-auto p-3" x-data="{ openPanel: null }">
+              <div class="text-sm font-semibold mb-2">Auswahl</div>
+
+              <template x-for="grp in $store.globalData.groupedOptions(
+                $store.globalData.route.selectedIndex === ($store.globalData.route.draft.modules.length-1)
+                  ? ['Disconnect','Concierge','Routing','DIY']       // END
+                  : ['ID&V','Basic Info','AI Mission','AI Info','Basic Mission'] // MID
+              )" :key="'grp-'+grp.group">
+
+                <div class="mb-2">
+                  <!-- Fall A: Gruppe mit EINEM fixen Item (simple Module) -->
+                  <template x-if="!Array.isArray(grp.items)">
                     <button
-                      class="w-full text-left px-2 py-2 rounded border transition hover:bg-gray-50 flex items-start gap-2"
+                      class="w-full text-left border rounded px-2 py-2 hover:bg-gray-50 flex items-center justify-between"
                       :class="{
-                        'bg-blue-50 border-blue-300': $store.globalData.route.selectedIndex===i,
-                        'border-gray-200': $store.globalData.route.selectedIndex!==i
+                        'ring-2 ring-blue-400':
+                          (() => {
+                            const selIdx = $store.globalData.route.selectedIndex ?? ($store.globalData.route.draft.modules.length-1);
+                            const m = $store.globalData.route.draft.modules[selIdx];
+                            return m?.type === grp.items?.value?.type;
+                          })()
                       }"
-                      draggable="true"
-                      @dragstart="dragIndex = i; $event.dataTransfer.effectAllowed='move'; $event.dataTransfer.setDragImage($el,16,16)"
-                      @dragover.prevent="$event.dataTransfer.dropEffect='move'"
-                      @drop="
+                      @click="
                         (() => {
-                          const mods = $store.globalData.route.draft.modules;
-                          const to = i;
-                          if(dragIndex===null || dragIndex===to) return;
-                          const end = mods.pop();       // End temporär entnehmen
-                          const [m] = mods.splice(dragIndex,1);
-                          mods.splice(to,0,m);
-                          mods.push(end);               // End zurück
-                          $store.globalData.route.selectedIndex = to;
-                          dragIndex = null;
+                          const selIdx = $store.globalData.route.selectedIndex ?? ($store.globalData.route.draft.modules.length-1);
+                          $store.globalData.route.draft.modules[selIdx] = { type: grp.items.value.type };
                         })()
                       "
-                      @click="$store.globalData.route.selectedIndex = i">
-
-                      <!-- Mid-Icon: vertikaler Balken -->
-                      <svg class="shrink-0 h-8 w-5 text-gray-700" viewBox="0 0 20 40" fill="currentColor" aria-hidden="true">
-                        <rect x="9" y="2" width="2" height="30" rx="1"></rect>
-                      </svg>
-
-                      <div class="min-w-0">
-                        <!-- Typ (mod.type) -->
-                        <div class="text-xs font-medium truncate" x-text="$store.globalData.resolveRouteTypeToLabel(mod.type) || '—'"></div>
-                        <div class="text-[10px] text-gray-500 truncate"
-                             x-text="$store.globalData.labelForSelection(mod)"></div>
-                      </div>
+                    >
+                      <span class="text-xs font-semibold" x-text="grp.items.label"></span>
                     </button>
+                  </template>
 
-                    <!-- delete -->
-                    <button class="text-[10px] text-red-600 px-1" title="Entfernen"
+                  <!-- Fall B: Gruppe mit MEHREREN Items (datengetrieben) -->
+                  <template x-if="Array.isArray(grp.items)">
+                    <div class="border rounded"
+                      :class="{
+                        'ring-2 ring-blue-400':
+                          (() => {
+                            const selIdx = $store.globalData.route.selectedIndex ?? ($store.globalData.route.draft.modules.length-1);
+                            const m = $store.globalData.route.draft.modules[selIdx];
+                            const t = (grp.items?.[0]?.value?.type) || null;
+                            return !!t && m?.type === t;
+                          })()
+                      }"
+                    >
+                      <button class="w-full px-2 py-2 flex items-center justify-between text-left"
+                        @click="openPanel = (openPanel===grp.group ? null : grp.group)">
+                        <span class="text-xs font-bold" x-text="grp.group"></span>
+                        <span x-text="openPanel===grp.group ? '–' : '+'"></span>
+                      </button>
+
+                      <div x-show="openPanel===grp.group" class="border-t max-h-64 overflow-auto">
+                        <template x-for="it in grp.items" :key="it.key">
+                          <div class="px-2 py-1 text-xs cursor-pointer hover:bg-blue-50"
+                            :class="{
+                              'bg-blue-100':
+                                (() => {
+                                  const selIdx = $store.globalData.route.selectedIndex ?? ($store.globalData.route.draft.modules.length-1);
+                                  const m = $store.globalData.route.draft.modules[selIdx];
+                                  return m?.type === it.value.type && m?.value === it.value.value;
+                                })()
+                            }"
                             @click="
-                              $store.globalData.route.draft.modules.splice(i,1);
-                              if($store.globalData.route.selectedIndex===i){ $store.globalData.route.selectedIndex=null }
-                            ">✕</button>
-                  </div>
-                </div>
-              </template>
-
-              <!-- END MODULE (letztes Element) -->
-              <div>
-                <div class="flex items-center gap-2">
-                  <button
-                    class="w-full text-left px-2 py-2 rounded border transition hover:bg-gray-50 flex items-start gap-2"
-                    :class="{
-                      'bg-blue-50 border-blue-300': $store.globalData.route.selectedIndex===($store.globalData.route.draft.modules.length-1),
-                      'border-gray-200': $store.globalData.route.selectedIndex!==($store.globalData.route.draft.modules.length-1) }"
-                    @click="$store.globalData.route.selectedIndex = $store.globalData.route.draft.modules.length-1">
-
-                    <!-- End-Icon: Balken + Kreis -->
-                    <svg class="shrink-0 h-8 w-5 text-gray-700" viewBox="0 0 20 40" fill="currentColor" aria-hidden="true">
-                      <rect x="9" y="2" width="2" height="30" rx="1"></rect>
-                      <circle cx="10" cy="35" r="3"></circle>
-                    </svg>
-
-                    <div class="min-w-0">
-                      <!-- Typ -->
-                      <div class="text-xs font-medium truncate"
-                           x-text="$store.globalData.resolveRouteTypeToLabel($store.globalData.route.draft.modules.at(-1)?.type) || 'disconnect'"></div>
-                      <!-- Name -->
-                      <div class="text-[10px] text-gray-500 truncate"
-                           x-text="$store.globalData.labelForSelection($store.globalData.route.draft.modules.at(-1))"></div>
+                              (() => {
+                                const selIdx = $store.globalData.route.selectedIndex ?? ($store.globalData.route.draft.modules.length-1);
+                                $store.globalData.route.draft.modules[selIdx] = { type: it.value.type, value: it.value.value };
+                                if (($store.globalData.route.draft.name==='Neue Route' || !$store.globalData.route.draft.name) && it.label) {
+                                  $store.globalData.route.draft.name = it.label;
+                                }
+                              })()
+                            "
+                          >
+                            <span x-text="it.label"></span>
+                          </div>
+                        </template>
+                      </div>
                     </div>
-                  </button>
-                  <div class="w-[1.25rem]"></div> <!-- no delete -->
+                  </template>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- MIDDLE: generisches Akkordeon (aus selectable.order + modules) -->
-        <div class="col-span-4 border-r overflow-y-auto p-3" x-data="{ openPanel: null }">
-          <div class="text-sm font-semibold mb-2">Auswahl</div>
-
-          <template x-for="key in (
-            $store.globalData.route.selectedIndex === ($store.globalData.route.draft.modules.length-1)
-              ? $store.globalData.route.selectable.order.end
-              : $store.globalData.route.selectable.order.mid
-          )" :key="'sect-'+key">
-
-            <div class="mb-2" x-data="{ def: $store.globalData.route.selectable.modules[key] }">
-
-              <!-- Built-in: def.value ist string -->
-              <template x-if="typeof def.value === 'string'">
-                <button
-                  class="w-full text-left border rounded px-2 py-2 hover:bg-gray-50 flex items-center justify-between"
-                  :class="{
-                    'ring-2 ring-blue-400':
-                      (
-                        // End aktiv?
-                        ($store.globalData.route.selectedIndex === ($store.globalData.route.draft.modules.length-1)
-                          && $store.globalData.route.draft.modules.at(-1)?.type === def.value)
-                        ||
-                        // Mid aktiv?
-                        ($store.globalData.route.selectedIndex !== ($store.globalData.route.draft.modules.length-1)
-                          && $store.globalData.route.draft.modules[$store.globalData.route.selectedIndex]?.type === def.value)
-                      )
-                  }"
-                  @click="
-                    if ($store.globalData.route.selectedIndex === ($store.globalData.route.draft.modules.length-1)) {
-                      $store.globalData.route.draft.modules[$store.globalData.route.draft.modules.length-1] = { type: def.value };
-                    } else {
-                      const i = $store.globalData.route.selectedIndex;
-                      if (i!=null) $store.globalData.route.draft.modules[i] = { type: def.value };
-                    }
-                  ">
-                  <span class="text-xs font-semibold" x-text="def.label"></span>
-                </button>
               </template>
+            </div>
+            <!-- RIGHT: Properties (vereinheitlicht) -->
+            <div class="col-span-4 overflow-hidden">
+              <div class="h-full overflow-y-auto p-3" x-data="{
+                  get selIdx() { 
+                    const r = $store.globalData.route; 
+                    return (r.selectedIndex ?? (r.draft.modules.length - 1));
+                  },
+                  get mod() { 
+                    const r = $store.globalData.route; 
+                    return r.draft.modules[this.selIdx] || {}; 
+                  },
+                  get isEnd() { 
+                    const r = $store.globalData.route; 
+                    return this.selIdx === (r.draft.modules.length - 1); 
+                  }
+                }">
+                <div class="text-sm font-semibold mb-2">Properties</div>
 
-              <!-- Collection: def.value ist array (Akkordeon + Items aus groupedOptions) -->
-              <template x-if="Array.isArray(def.value)">
-                <div class="border rounded"
-                     :class="{
-                       'ring-2 ring-blue-400':
-                         (
-                           // End aktiv?
-                           ($store.globalData.route.selectedIndex === ($store.globalData.route.draft.modules.length-1)
-                             && $store.globalData.route.draft.modules.at(-1)?.type === key)
-                           ||
-                           // Mid aktiv?
-                           ($store.globalData.route.selectedIndex !== ($store.globalData.route.draft.modules.length-1)
-                             && $store.globalData.route.draft.modules[$store.globalData.route.selectedIndex]?.type === key)
-                         )
-                     }">
-                  <button class="w-full px-2 py-2 flex items-center justify-between text-left"
-                          @click="openPanel = (openPanel===key ? null : key)">
-                    <span class="text-xs font-bold" x-text="def.label"></span>
-                    <span x-text="openPanel===key ? '–' : '+'"></span>
-                  </button>
-
-                  <div x-show="openPanel===key" class="border-t max-h-64 overflow-auto">
-                    <template x-for="group in $store.globalData.groupedOptions(def.value)" :key="'grp-'+key+'-'+group.group">
-                      <template x-for="item in group.items" :key="item.key">
-                        <div class="px-2 py-1 text-xs cursor-pointer hover:bg-blue-50"
-                             :class="{
-                               'bg-blue-100':
-                                 (
-                                   // End-Child aktiv?
-                                   ($store.globalData.route.selectedIndex === ($store.globalData.route.draft.modules.length-1)
-                                     && $store.globalData.route.draft.modules.at(-1)?.type === key
-                                     && $store.globalData.route.draft.modules.at(-1)?.value === item.value.value)
-                                   ||
-                                   // Mid-Child aktiv?
-                                   ($store.globalData.route.selectedIndex !== ($store.globalData.route.draft.modules.length-1)
-                                     && $store.globalData.route.draft.modules[$store.globalData.route.selectedIndex]?.type === key
-                                     && $store.globalData.route.draft.modules[$store.globalData.route.selectedIndex]?.value === item.value.value)
-                                 )
-                             }"
-                             @click="
-                               if ($store.globalData.route.selectedIndex === ($store.globalData.route.draft.modules.length-1)) {
-                                 $store.globalData.route.draft.modules[$store.globalData.route.draft.modules.length-1] = { type: key, value: item.value.value };
-                               } else {
-                                 const i = $store.globalData.route.selectedIndex;
-                                 if (i!=null) $store.globalData.route.draft.modules[i] = { type: key, value: item.value.value };
-                               }
-                               if (($store.globalData.route.draft.name==='Neue Route' || !$store.globalData.route.draft.name) && item.label && !routeNameLocked) {
-                                 $store.globalData.route.draft.name = item.label; routeNameLocked = true;
-                               }
-                             ">
-                          <span x-text="item.label"></span>
-                        </div>
-                      </template>
-                    </template>
+                <!-- End: disconnect (statisch) -->
+                <template x-if="isEnd && mod?.type === 'disconnect'">
+                  <div class="text-xs space-y-1">
+                    <div class="font-semibold">Disconnect</div>
+                    <div>
+                      <span class="text-gray-500">Beschreibung:&nbsp;</span>
+                      <span class="text-gray-700">
+                        Das Disconnect-Modul verabschiedet den Anrufer und beendet den Dialog. Damit ist der Telefonanruf beendet.
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </template>
+                </template>
+
+                <!-- End: concierge (statisch) -->
+                <template x-if="isEnd && mod?.type === 'concierge'">
+                  <div class="text-xs space-y-1">
+                    <div class="font-semibold">Concierge</div>
+                    <div>
+                      <span class="text-gray-500">Beschreibung:&nbsp;</span>
+                      <span class="text-gray-700">
+                        Das Concierge-Modul leitet den Anrufer zurück in die offene Eingangsfrage, damit der Anrufer erneut ein Thema auswählen und den Dialog über einen anderen Pfad durchlaufen kann.
+                      </span>
+                    </div>
+                  </div>
+                </template>
+
+                <!-- Generic Fallback (gilt für alle nicht-statischen Typen, Mid & End) -->
+                <template
+                  x-if="!( $store.globalData.route.selectedIndex === ($store.globalData.route.draft.modules.length-1)
+                          && ['disconnect','concierge'].includes($store.globalData.route.draft.modules.at(-1)?.type) )">
+                  <div class="mt-3 text-xs space-y-1">
+                    <div>
+                      <span class="font-semibold">Name:&nbsp;</span>
+                      <span x-text="(() => {
+                          const m = $store.globalData.route.draft.modules[$store.globalData.route.selectedIndex];
+                          // einfache Module haben keine Unterauswahl
+                          if (!m || !m.value) return '—';
+                          // in allen DATEN-Gruppen nach dem passenden {type, value} suchen
+                          const DATA_GROUPS = ['Routing','Basic Info','AI Mission','DIY','AI Info','Basic Mission'];
+                          const groups = $store.globalData.groupedOptions(DATA_GROUPS);
+                          for (const g of groups) {
+                            const items = Array.isArray(g.items) ? g.items : [g.items];
+                            for (const it of items) {
+                              if (it?.value?.type === m.type && it?.value?.value === m.value) return it.label;
+                            }
+                          }
+                          return '—';
+                        })()
+                      "></span>
+                    </div>
+
+                    <div>
+                      <span class="font-semibold">Typ:&nbsp;</span>
+                      <span
+                        x-text="$store.globalData.resolveRouteTypeToLabel($store.globalData.route.draft.modules[$store.globalData.route.selectedIndex]?.type) || '—'">
+                      </span>
+                    </div>
+
+                    <div>
+                      <span class="text-gray-500">ID:&nbsp;</span>
+                      <span x-text="$store.globalData.route.draft.modules[$store.globalData.route.selectedIndex]?.value || '—'"></span>
+                    </div>
+                  </div>
+                </template>
+              </div>
             </div>
-          </template>
-        </div>
+          </div>
 
-        <!-- RIGHT: Properties (vereinheitlicht) -->
-        <div class="col-span-4 overflow-hidden">
-          <div class="h-full overflow-y-auto p-3" x-data="{
-              get selIdx() { 
-                const r = $store.globalData.route; 
-                return (r.selectedIndex ?? (r.draft.modules.length - 1));
-              },
-              get mod() { 
-                const r = $store.globalData.route; 
-                return r.draft.modules[this.selIdx] || {}; 
-              },
-              get isEnd() { 
-                const r = $store.globalData.route; 
-                return this.selIdx === (r.draft.modules.length - 1); 
-              }
-            }">
-            <div class="text-sm font-semibold mb-2">Properties</div>
-
-            <!-- End: disconnect (statisch) -->
-            <template x-if="isEnd && mod?.type === 'disconnect'">
-              <div class="text-xs space-y-1">
-                <div class="font-semibold">Disconnect</div>
-                <div>
-                  <span class="text-gray-500">Beschreibung:&nbsp;</span>
-                  <span class="text-gray-700">
-                    Das Disconnect-Modul verabschiedet den Anrufer und beendet den Dialog. Damit ist der Telefonanruf beendet.
-                  </span>
-                </div>
-              </div>
-            </template>
-
-            <!-- End: concierge (statisch) -->
-            <template x-if="isEnd && mod?.type === 'concierge'">
-              <div class="text-xs space-y-1">
-                <div class="font-semibold">Concierge</div>
-                <div>
-                  <span class="text-gray-500">Beschreibung:&nbsp;</span>
-                  <span class="text-gray-700">
-                    Das Concierge-Modul leitet den Anrufer zurück in die offene Eingangsfrage, damit der Anrufer erneut ein Thema auswählen und den Dialog über einen anderen Pfad durchlaufen kann.
-                  </span>
-                </div>
-              </div>
-            </template>
-
-            <!-- Generic Fallback (gilt für alle nicht-statischen Typen, Mid & End) -->
-            <template
-              x-if="!( $store.globalData.route.selectedIndex === ($store.globalData.route.draft.modules.length-1)
-                      && ['disconnect','concierge'].includes($store.globalData.route.draft.modules.at(-1)?.type) )">
-              <div class="mt-3 text-xs space-y-1">
-                <div>
-                  <span class="font-semibold">Name:&nbsp;</span>
-                  <span x-text="
-                    (() => {
-                      const m = $store.globalData.route.draft.modules[$store.globalData.route.selectedIndex];
-                      const def = $store.globalData.route.selectable.modules[m?.type];
-                      if (!def || !Array.isArray(def.value) || !m?.value) return '—';
-                      const groups = $store.globalData.groupedOptions(def.value) || [];
-                      for (const g of groups) {
-                        for (const it of (g.items || [])) {
-                          if (it?.value?.value === m.value) return it.label;
-                        }
-                      }
-                      return '—';
-                    })()
-                  "></span>
-                </div>
-
-                <div>
-                  <span class="font-semibold">Typ:&nbsp;</span>
-                  <span
-                    x-text="$store.globalData.resolveRouteTypeToLabel($store.globalData.route.draft.modules[$store.globalData.route.selectedIndex]?.type) || '—'">
-                  </span>
-                </div>
-
-                <div>
-                  <span class="text-gray-500">ID:&nbsp;</span>
-                  <span x-text="$store.globalData.route.draft.modules[$store.globalData.route.selectedIndex]?.value || '—'"></span>
-                </div>
-              </div>
-            </template>
+          <!-- Footer 
+          <div class="px-4 py-3 border-t flex items-center justify-end gap-2">-->
+          <div class="px-4 py-3 border-t flex items-center justify-between">
+            <!-- LINKS: Route löschen -->
+            <button
+              class="px-3 py-1 text-sm rounded bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
+              @click="
+                $store.modal.confirm({
+                  title: 'Route löschen',
+                  message: 'Möchten Sie die Route für diese Category/Concern wirklich löschen?',
+                  confirmLabel: 'Ja, löschen',
+                  cancelLabel: 'Nein',
+                  onConfirm: () => {
+                    const cell = $store.globalData.route.cell;
+                    if (cell) {
+                      $store.globalData.matrixUnset(cell.categoryId, cell.concernId);
+                    }
+                    $store.globalData.closeRouteModal();
+                  }
+                })
+              "
+            >
+              Route löschen
+            </button>
+            <div class="flex items-center gap-2">
+              <button class="px-3 py-1 text-sm rounded bg-gray-200" @click="$store.globalData.closeRouteModal()">Abbrechen</button>
+              <button class="px-3 py-1 text-sm rounded text-white bg-blue-600" @click="$store.globalData.saveRouteModal()">Bestätigen</button>
+            </div>
           </div>
         </div>
       </div>
-
-      <!-- Footer 
-      <div class="px-4 py-3 border-t flex items-center justify-end gap-2">-->
-      <div class="px-4 py-3 border-t flex items-center justify-between">
-        <!-- LINKS: Route löschen -->
-        <button
-          class="px-3 py-1 text-sm rounded bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
-          @click="
-            $store.modal.confirm({
-              title: 'Route löschen',
-              message: 'Möchten Sie die Route für diese Category/Concern wirklich löschen?',
-              confirmLabel: 'Ja, löschen',
-              cancelLabel: 'Nein',
-              onConfirm: () => {
-                const cell = $store.globalData.route.cell;
-                if (cell) {
-                  $store.globalData.matrixUnset(cell.categoryId, cell.concernId);
-                }
-                $store.globalData.closeRouteModal();
-              }
-            })
-          "
-        >
-          Route löschen
-        </button>
-        <div class="flex items-center gap-2">
-          <button class="px-3 py-1 text-sm rounded bg-gray-200" @click="$store.globalData.closeRouteModal()">Abbrechen</button>
-          <button class="px-3 py-1 text-sm rounded text-white bg-blue-600" @click="$store.globalData.saveRouteModal()">Bestätigen</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
+    </template>
     <!---------------------------------------
      ROUTE MODAL END
      --------------------------------------->
