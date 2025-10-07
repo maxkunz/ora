@@ -1,33 +1,89 @@
-<div class="relative h-full">
-  <div class="absolute inset-0 overflow-hidden">
-    <div class="grid grid-cols-[minmax(0,2.2fr)_minmax(0,0.8fr)] gap-4 h-full min-h-0">
-      
-      <!-- Left side agent conifg-->
-      <div class="h-full p-6 min-h-0 overflow-y-auto pr-2">
-        <template x-if="$store.globalData.selectedInfoAgentId && $store.globalData.info_agents[$store.globalData.selectedInfoAgentId]">
-            <div x-data="infoAgentModule()" class="space-y-6">
+<div x-data="infoAgentModule()" class="max-w-full space-y-6 p-6">
+  <div class="border border-gray-200 rounded-xl bg-white shadow-sm">
+    <!-- Kopf -->
+    <div class="flex items-center justify-between p-4 border-b border-gray-200">
+      <h2 class="text-lg font-semibold">Info Agents</h2>
+    </div>
+
+    <!-- Zwei-Spalten Layout wie DIY/Announcements -->
+    <div class="grid md:grid-cols-4">
+      <!-- Liste links -->
+     <!-- Liste links -->
+      <aside class="md:col-span-1 p-4 space-y-2 border-r border-gray-200">
+        <!-- Überschrift ohne Hintergrund -->
+        <h3 class="text-sm font-semibold text-gray-800 mb-2">Verfügbare Info Agents</h3>
+
+        <template x-for="[id, agent] in Object.entries($store.globalData.info_agents)" :key="id">
+          <div
+            class="flex items-center justify-between p-2 border rounded cursor-pointer"
+            :class="selectedInfoAgentId === id ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'"
+            @click="selectedInfoAgentId = id"
+          >
+            <div class="flex flex-col text-left">
+              <span class="text-sm font-medium" x-text="agent.name || 'Unbenannter Agent'"></span>
+              <span class="text-xs text-gray-500" x-text="agent.personality || 'Keine Personality'"></span>
+            </div>
+
+            <!-- Mülleimer nur bei Auswahl, rot + Hover-Highlight -->
+            <div x-show="selectedInfoAgentId === id" @click.stop>
+              <button
+                class="p-1 rounded hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200 group"
+                aria-label="Info Agent löschen"
+                @click="$store.modal.confirm({
+                  title: 'Wollen Sie den Info Agent wirklich löschen?',
+                  message: 'Diese Aktion kann nicht rückgängig gemacht werden.',
+                  onConfirm: () => delete $store.globalData.info_agents[id]
+                })"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                     stroke-width="1.5" stroke="currentColor"
+                     class="size-4 text-red-600 group-hover:text-red-700">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                        d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </template>
+
+        <!-- Add-New Fläche am Ende -->
+        <button
+          class="w-full text-left px-3 py-2 rounded border border-dashed bg-gray-50 hover:bg-gray-100 text-gray-600"
+          @click="$store.globalData.addNewInfoAgent()">
+          <div class="flex items-center justify-center h-10">
+            <span class="text-sm font-medium">+ Neuer Info Agent</span>
+          </div>
+        </button>
+      </aside>
+
+      <!-- Editor rechts -->
+      <section class="md:col-span-3 min-h-[16rem]">
+        <div class="p-4">
+          <div class="h-full min-h-0 overflow-y-auto pr-2">
+            <template x-if="selectedInfoAgentId && $store.globalData.info_agents[selectedInfoAgentId]">
+              <div class="space-y-6">
                 <!-- Agent Name -->
                 <div>
-                    <label class="text-sm font-semibold">Agent Name</label>
-                    <input type="text" class="w-full border px-2 py-1 rounded text-sm"
-                        x-model="$store.globalData.info_agents[$store.globalData.selectedInfoAgentId].name">
+                  <label class="text-sm font-semibold">Agent Name</label>
+                  <input type="text" class="w-full border px-2 py-1 rounded text-sm"
+                         x-model="$store.globalData.info_agents[selectedInfoAgentId].name">
                 </div>
 
                 <!-- Personality -->
                 <div>
-                <label class="text-sm font-semibold">Personality</label>
-                <textarea class="w-full border px-2 py-1 rounded text-sm" rows="3"
-                            x-model="$store.globalData.info_agents[$store.globalData.selectedInfoAgentId].personality"></textarea>
+                  <label class="text-sm font-semibold">Personality</label>
+                  <textarea class="w-full border px-2 py-1 rounded text-sm" rows="3"
+                            x-model="$store.globalData.info_agents[selectedInfoAgentId].personality"></textarea>
                 </div>
 
                 <!-- Instruction -->
                 <div>
-                    <label class="text-sm font-semibold">Instruktion</label>
-                    <textarea class="w-full border px-2 py-1 rounded text-sm" rows="3"
-                            x-model="$store.globalData.info_agents[$store.globalData.selectedInfoAgentId].instruction"></textarea>
+                  <label class="text-sm font-semibold">Instruktion</label>
+                  <textarea class="w-full border px-2 py-1 rounded text-sm" rows="3"
+                            x-model="$store.globalData.info_agents[selectedInfoAgentId].instruction"></textarea>
                 </div>
 
-                <!-- Trainings Content Auswahl: 2-Spalten-Layout -->
+                <!-- Trainings Content Auswahl -->
                 <div class="space-y-2">
                     <label class="text-sm font-semibold">Inhalte auswählen:</label>
                     <div class="grid grid-cols-2 gap-4">
@@ -57,97 +113,49 @@
                     </div>
                 </div>
 
-                <label class="text-sm font-semibold">Ausgewählte Inhalte: </label>
-                <!-- Liste der Trainingsinhalte -->
+                <label class="text-sm font-semibold">Ausgewählte Inhalte:</label>
                 <div class="border rounded p-2 space-y-2 bg-gray-50">
-                    <template x-for="(item, index) in $store.globalData.info_agents[$store.globalData.selectedInfoAgentId].trainingsContent" :key="item.id + '-' + index">
-                        <div class="flex items-center justify-between text-sm px-2 py-1 rounded border"
-                            :class="{
-                                'bg-green-50 border-green-400': item.already_uploaded && !item.flags.delete,
-                                'bg-gray-100 opacity-50 line-through border-gray-300': item.flags.delete,
-                                'bg-white border-gray-200': !item.already_uploaded && !item.flags.delete
-                            }">
-                            <div>
-                                <span class="font-semibold" x-text="item.type.toUpperCase()"></span> -
-                                <span x-text="item.title || item.id"></span>
-                            </div>
-                            <div class="flex gap-2 items-center">
-                                <!-- Reindex nur anzeigen wenn already_uploaded -->
-                                <template x-if="item.already_uploaded">
-                                    <label class="text-xs">
-                                        <input type="checkbox" x-model="item.flags.force_reindex">
-                                        Reindex
-                                    </label>
-                                </template>
-
-                                <!-- Delete Button -->
-                                <button class="text-red-500 text-sm"
-                                        :title="item.flags.delete ? 'Löschmarkierung entfernen' : 'Zum Löschen markieren'"
-                                        @click="deleteTrainingItem(index)">
-                                    ✖
-                                </button>
-                            </div>
-                        </div>
-                    </template>
+                  <template x-for="(item, index) in $store.globalData.info_agents[selectedInfoAgentId].trainingsContent" :key="item.id + '-' + index">
+                    <div class="flex items-center justify-between text-sm px-2 py-1 rounded border"
+                         :class="{
+                           'bg-green-50 border-green-400': item.already_uploaded && !item.flags.delete,
+                           'bg-gray-100 opacity-50 line-through border-gray-300': item.flags.delete,
+                           'bg-white border-gray-200': !item.already_uploaded && !item.flags.delete
+                         }">
+                      <div>
+                        <span class="font-semibold" x-text="item.type.toUpperCase()"></span> -
+                        <span x-text="item.title || item.id"></span>
+                      </div>
+                      <div class="flex gap-2 items-center">
+                        <template x-if="item.already_uploaded">
+                          <label class="text-xs">
+                            <input type="checkbox" x-model="item.flags.force_reindex">
+                            Reindex
+                          </label>
+                        </template>
+                        <button class="text-red-500 text-sm"
+                                :title="item.flags.delete ? 'Löschmarkierung entfernen' : 'Zum Löschen markieren'"
+                                @click="deleteTrainingItem(index)">
+                          ✖
+                        </button>
+                      </div>
+                    </div>
+                  </template>
                 </div>
 
-                <!-- Trainieren Button -->
                 <div>
-                    <button class="bg-green-600 text-white px-4 py-2 rounded shadow"
-                            @click="trainAgent">Verarbeiten</button>
+                  <button class="bg-green-600 text-white px-4 py-2 rounded shadow"
+                          @click="trainAgent">Verarbeiten</button>
                 </div>
-            </div>
-        </template>
-    </div>
+              </div>
+            </template>
 
-    <!-- Right Side Selection List -->
-          <div class="h-full border-l">
-        <h3 class="text-sm font-semibold bg-dark-grey text-gray-200 px-3 py-3 w-full mb-0">
-          Verfügbare Info Agents
-        </h3>
-
-        <template x-for="[id, agent] in Object.entries($store.globalData.info_agents)" :key="id">
-          <div
-            class="flex items-center justify-between p-2 border-b cursor-pointer mx-2 mt-2"
-            :class="($store.globalData.selectedInfoAgentId === id ? 'bg-blue-100 rounded-l' : '')"
-            @click="$store.globalData.selectedInfoAgentId = id">
-            <div class="flex flex-col text-left">
-              <span class="text-sm font-medium" x-text="agent.name || 'Unbenannter Agent'"></span>
-              <span class="text-xs text-gray-500" x-text="agent.personality || 'Keine Personality'"></span>
-            </div>
-            <button
-              @click.stop="$store.modal.confirm({
-                title: 'Wollen Sie den Info Agent wirklich löschen?',
-                message: 'Diese Aktion kann nicht rückgängig gemacht werden.',
-                onConfirm: () => delete $store.globalData.info_agents[id]
-              })"
-              class="ml-2 w-6 h-6 flex items-center justify-center rounded transition-all duration-200
-                     text-gray-400 hover:text-red-500 hover:shadow-[0_0_4px_2px_rgba(239,68,68,0.6)]">
-              <span class="text-[0.5rem]">❌</span>
-            </button>
+            <template x-if="!selectedInfoAgentId || !$store.globalData.info_agents[selectedInfoAgentId]">
+              <div class="text-sm text-gray-400 p-4 italic">Kein Info Agent ausgewählt.</div>
+            </template>
           </div>
-        </template>
-
-        <div class="flex justify-center mt-3 mb-2 mx-2">
-          <button
-            class="bg-green-600 text-white text-xs px-3 py-1 rounded"
-            @click="(() => {
-              const id = crypto.randomUUID();
-              $store.globalData.info_agents[id] = {
-                name: '',
-                personality: '',
-                instruction: '',
-                trainingsContent: [],
-                agent_id: id,
-                tenant_id: $store.globalData.client_id
-              };
-              $store.globalData.selectedInfoAgentId = id;
-            })()">
-            + Neuer Info Agent
-          </button>
         </div>
-      </div>
-
+      </section>
     </div>
   </div>
 </div>

@@ -3,9 +3,9 @@ import {loadDocumentsFromWorkspaceGenesys} from '../../js/genesys_helper.js';
 
 export function infoAgentModule() {
   return {
-    selectedArticleId: '',
     selectedDocId: '',
     trainingsContent: [],
+    selectedInfoAgentId: null,
 
     documents: [],
     async init() {
@@ -20,13 +20,27 @@ export function infoAgentModule() {
 
     isAlreadyInTraining(type, id) {
         const store = Alpine.store("globalData");
-        const agent = store.info_agents[store.selectedInfoAgentId];
+        const agent = store.info_agents[this.selectedInfoAgentId];
         return agent.trainingsContent.some(item => item.type === (type === 'article' ? 'article' : 'pdf') && item.id === id);
+    },
+
+    addNewInfoAgent() {
+      const store = Alpine.store("globalData");
+      const id = crypto.randomUUID();
+      store.info_agents[id] = {
+        name: '',
+        personality: '',
+        instruction: '',
+        trainingsContent: [],
+        agent_id: id,
+        tenant_id: this.client_id
+      };
+      this.selectedInfoAgentId = id;
     },
 
     addTrainingItem(type, id) {
       const store = Alpine.store("globalData");
-      const agent = store.info_agents[store.selectedInfoAgentId];
+      const agent = store.info_agents[this.selectedInfoAgentId];
       if (!agent) return;
 
       const item = type === "article"
@@ -61,7 +75,7 @@ export function infoAgentModule() {
 
     deleteTrainingItem(index) {
         const store = Alpine.store("globalData");
-        const agent = store.info_agents[store.selectedInfoAgentId];
+        const agent = store.info_agents[this.selectedInfoAgentId];
         const item = agent.trainingsContent[index];
 
         if (!item) return;
@@ -79,7 +93,7 @@ export function infoAgentModule() {
         const store = Alpine.store("globalData");
         const token = store.genesys.accessToken;
         const clientId = store.client_id;
-        const agentId = store.selectedInfoAgentId;
+        const agentId = this.selectedInfoAgentId;
         const agent = store.info_agents[agentId];
 
         if (!agent) {

@@ -1,204 +1,281 @@
-<div class="relative h-full">
-  <div class="absolute inset-0 overflow-hidden">
-    <div class="!grid grid-cols-3 gap-4 h-full min-h-0">
+<div x-data="diyModule()" class="max-w-full space-y-6 p-6">
+    <div class="border border-gray-200 rounded-xl bg-white shadow-sm">
+        <!-- Kopf -->
+        <div class="flex items-center justify-between p-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold">DIY</h2>
+            <!-- optionale Header-Aktionen -->
+        </div>
 
-      <!-- Left side DIY-Editor -->
-        <div class="col-span-2 p-6 h-full min-h-0 overflow-y-auto pr-2">
+        <!-- Zwei-Spalten Layout -->
+        <div class="grid md:grid-cols-4">
+            <!-- Liste links -->
+            <aside class="md:col-span-1 p-4 space-y-2 border-r border-gray-200">
+  <!-- Überschrift ohne Hintergrund -->
+  <h3 class="text-sm font-semibold text-gray-800 mb-2">
+    Verfügbare Fragegruppen
+  </h3>
 
-            <template x-if="$store.globalData.diys.length > 0 && $store.globalData.diys[$store.globalData.selectedDiyIndex]">
-                <div class="max-w-full space-y-6">
-                    <!-- Meta -->
-                    <div>
-                        <label class="block text-sm font-semibold mb-1">Name</label>
-                        <input type="text" x-model="$store.globalData.diys[$store.globalData.selectedDiyIndex].Name"
-                            class="border px-2 py-1 rounded w-full text-sm">
-                    </div>
+  <template x-if="$store.globalData.diys && $store.globalData.diys.length">
+    <div class="space-y-2">
+      <template x-for="(entry, i) in $store.globalData.diys" :key="i">
+        <div
+          class="flex items-center justify-between p-2 border rounded cursor-pointer"
+          :class="selectedDiyIndex === i ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'"
+          @click="selectedDiyIndex = i"
+        >
+          <div class="flex flex-col text-left">
+            <span class="text-sm font-medium" x-text="entry.Name || 'Unnamed'"></span>
+            <span class="text-xs text-gray-500" x-text="entry.Description || '—'"></span>
+          </div>
 
-                    <div>
-                        <label class="block text-sm font-semibold mb-1">Beschreibung</label>
-                        <textarea x-model="$store.globalData.diys[$store.globalData.selectedDiyIndex].Description" rows="2"
-                                class="border px-2 py-1 rounded w-full text-sm"></textarea>
-                    </div>
-                    <x-component
-                            template="diy-question-editor"
-                            x-data="{ get Question() { return $store.globalData.diys[$store.globalData.selectedDiyIndex].Question; } }"
-                            styles="global"
-                            shadow="false"></x-component>
-                </div>
+          <!-- Mülleimer nur bei Auswahl, rot + Hover-Highlight -->
+          <div x-show="selectedDiyIndex === i" @click.stop>
+            <button
+              class="p-1 rounded hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200 group"
+              aria-label="Fragegruppe löschen"
+              @click="$store.modal.confirm({
+                title: 'Wollen Sie das Diy wirklich löschen?',
+                message: 'Diese Aktion kann nicht rückgängig gemacht werden.',
+                onConfirm: () => removeDiy(i)
+              })"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                   stroke-width="1.5" stroke="currentColor"
+                   class="size-4 text-red-600 group-hover:text-red-700">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </template>
 
-            </template>
-        
+      <!-- Add-New Fläche am Ende -->
+      <button
+        class="w-full text-left px-3 py-2 rounded border border-dashed bg-gray-50 hover:bg-gray-100 text-gray-600"
+        @click="addNewDiy()"
+      >
+        <div class="flex items-center justify-center h-10">
+          <span class="text-sm font-medium">+ Neue Fragegruppe</span>
+        </div>
+      </button>
+    </div>
+  </template>
 
-            <!-- Question Template -->
+  <template x-if="!$store.globalData.diys || !$store.globalData.diys.length">
+    <div class="text-xs text-gray-500">Keine Fragegruppen vorhanden.</div>
+  </template>
+</aside>
 
 
-            <template x-if="$store.globalData.diys.length === 0 || !$store.globalData.diys[$store.globalData.selectedDiyIndex]">
-                <div class="text-sm text-gray-400 p-4 italic">Keine Fragegruppe ausgewählt.</div>
-            </template>
+            <!-- Editor rechts -->
+            <section class="md:col-span-3 min-h-[16rem]">
+                <div class="p-4">
+                    <div class="col-span-2 p-6 h-full min-h-0 overflow-y-auto pr-2">
 
-            <template id="diy-question-editor">
-                <div class="space-y-6 border border-gray-200 p-4 rounded-lg bg-white shadow-sm">
-                    <!-- Question, Prompt / Reprompt -->
-                    <div>
-                        <h2 class="font-bold text-gray-800 mb-2">Frage</h2>
+                        <template
+                                x-if="$store.globalData.diys.length > 0 && $store.globalData.diys[selectedDiyIndex]">
+                            <div class="max-w-full space-y-6">
+                                <!-- Meta -->
+                                <div>
+                                    <label class="block text-sm font-semibold mb-1">Name</label>
+                                    <input type="text"
+                                           x-model="$store.globalData.diys[selectedDiyIndex].Name"
+                                           class="border px-2 py-1 rounded w-full text-sm">
+                                </div>
 
-                        <!-- Prompt -->
-                        <div class="flex items-center gap-2 mb-2">
-                            <label class="text-sm font-medium text-gray-700 w-28">Prompt:</label>
-                            <input type="text"
-                                x-model="Question.Prompt"
-                                placeholder="Geben Sie die Hauptfrage ein"
-                                class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500">
-                        </div>
+                                <div>
+                                    <label class="block text-sm font-semibold mb-1">Beschreibung</label>
+                                    <textarea
+                                            x-model="$store.globalData.diys[selectedDiyIndex].Description"
+                                            rows="2"
+                                            class="border px-2 py-1 rounded w-full text-sm"></textarea>
+                                </div>
+                                <x-component
+                                        template="diy-question-editor"
+                                        x-data="{ get Question() { return $store.globalData.diys[selectedDiyIndex].Question; } }"
+                                        styles="global"
+                                        shadow="false"></x-component>
+                            </div>
 
-                        <!-- Reprompt -->
-                        <div class="flex items-center gap-2">
-                            <label class="text-sm font-medium text-gray-700 w-28">Reprompt:</label>
-                            <input type="text"
-                                x-model="Question.Reprompt"
-                                placeholder="Optional: Wiederholungsfrage"
-                                class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                    </div>
+                        </template>
 
-                    <!-- Antworten -->
-                    <div class="space-y-6">
-                        <h2 class="font-bold text-gray-800 mb-2">Antworten</h2>
 
-                        <template x-for="(answer, i) in Question.Answers" :key="i">
-                            <div class="border border-gray-200 rounded" x-data="{ open: false }">
+                        <!-- Question Template -->
 
-                                <!-- Header: minimal display (when collapsed) and toggle icon -->
-                                <div @click="open = !open" :class="open? 'bg-highlight-blue': ''"
-                                    class="flex rounded-t items-start justify-between px-2 py-1">
 
-                                    <!-- Left: only shown when collapsed -->
-                                    <div class="flex items-center gap-3 flex-wrap text-xs text-gray-800" x-show="!open">
-                                        <!-- Counter -->
-                                        <div class="flex items-center justify-center w-5 h-5 rounded-full bg-highlight-blue text-white font-bold">
-                                            <span x-text="i + 1"></span>
-                                        </div>
+                        <template
+                                x-if="$store.globalData.diys.length === 0 || !$store.globalData.diys[selectedDiyIndex]">
+                            <div class="text-sm text-gray-400 p-4 italic">Keine Fragegruppe ausgewählt.</div>
+                        </template>
 
-                                        <!-- Type label -->
-                                        <span class="font-semibold"
-                                            x-text="'Antwort Typ (' + (answer.Question? 'Frage' : answer.Target[0].type) + '):'"></span>
+                        <template id="diy-question-editor">
+                            <div class="space-y-6 border border-gray-200 p-4 rounded-lg bg-white shadow-sm">
+                                <!-- Question, Prompt / Reprompt -->
+                                <div>
+                                    <h2 class="font-bold text-gray-800 mb-2">Frage</h2>
 
-                                        <!-- Keywords as tags -->
-                                        <template x-for="(kw, k) in answer.keywords" :key="k">
-                                            <span class="border-b border-gray-300 rounded px-1 py-0.5" x-text="kw"></span>
-                                        </template>
+                                    <!-- Prompt -->
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <label class="text-sm font-medium text-gray-700 w-28">Prompt:</label>
+                                        <input type="text"
+                                               x-model="Question.Prompt"
+                                               placeholder="Geben Sie die Hauptfrage ein"
+                                               class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500">
                                     </div>
-                                    <!-- Left: show when opend -->
-                                    <div class="flex items-center gap-2" x-show="open">
-                                        <div class="flex items-center justify-center w-5 h-5 rounded-full bg-white text-black text-xs font-bold">
-                                            <span x-text="i + 1"></span>
-                                        </div>
-                                        <label class="text-xs text-white font-semibold text-gray-700">Answer Type:</label>
-                                        <span x-text="answer.Question? 'Frage' : answer.Target[0].type"
-                                            class="text-xs text-white font-semibold text-gray-700 w-28"></span>
-                                    </div>
 
-                                    <!-- Right: toggle icon (always shown) -->
-                                    <div class="ml-auto text-xs text-grey-800 ml-2 cursor-pointer select-none">
-                                        <span x-text="open ? '▲' : '▼'"></span>
+                                    <!-- Reprompt -->
+                                    <div class="flex items-center gap-2">
+                                        <label class="text-sm font-medium text-gray-700 w-28">Reprompt:</label>
+                                        <input type="text"
+                                               x-model="Question.Reprompt"
+                                               placeholder="Optional: Wiederholungsfrage"
+                                               class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500">
                                     </div>
                                 </div>
 
-                                <!-- Full editor (only shown when open) -->
-                                <div x-show="open" class="p-4 space-y-3 border-t border-gray-200">
+                                <!-- Antworten -->
+                                <div class="space-y-6">
+                                    <h2 class="font-bold text-gray-800 mb-2">Antworten</h2>
 
+                                    <template x-for="(answer, i) in Question.Answers" :key="i">
+                                        <div class="border border-gray-200 rounded" x-data="{ open: false }">
 
-                                    <!-- Keyword input & editor -->
-                                    <div x-data="{ newKeyword: '' }">
-                                        <label class="text-xs font-bold block mb-1">Keywords</label>
-                                        <div class="flex flex-wrap gap-2 mb-2">
-                                            <template x-for="(kw, index) in answer.keywords" :key="index">
-                                                <div class="relative inline-flex items-center">
-                                                    <button x-show="kw.startsWith('*')"
-                                                            @click="answer.keywords[index] = kw.replace(/^\*\s*/, '')"
-                                                            class="text-green-600 text-xs hover:text-green-800" title="Confirm">*
-                                                    </button>
-                                                    <input type="text" x-model="answer.keywords[index]"
-                                                        class="rounded-full border px-3 py-1 text-xs pl-2 pr-5"
-                                                        :class="kw.startsWith('*') ? 'bg-highlight-green' : ''"
-                                                        :style="{ width: (kw.length + 2) + 'ch', minWidth: '7ch' }"/>
-                                                    <button @click="answer.keywords.splice(index, 1)"
-                                                            class="absolute right-1 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 text-xs">
-                                                        ×
-                                                    </button>
+                                            <!-- Header: minimal display (when collapsed) and toggle icon -->
+                                            <div @click="open = !open" :class="open? 'bg-highlight-blue': ''"
+                                                 class="flex rounded-t items-start justify-between px-2 py-1">
+
+                                                <!-- Left: only shown when collapsed -->
+                                                <div class="flex items-center gap-3 flex-wrap text-xs text-gray-800"
+                                                     x-show="!open">
+                                                    <!-- Counter -->
+                                                    <div class="flex items-center justify-center w-5 h-5 rounded-full bg-highlight-blue text-white font-bold">
+                                                        <span x-text="i + 1"></span>
+                                                    </div>
+
+                                                    <!-- Type label -->
+                                                    <span class="font-semibold"
+                                                          x-text="'Antwort Typ (' + (answer.Question? 'Frage' : answer.Target[0].type) + '):'"></span>
+
+                                                    <!-- Keywords as tags -->
+                                                    <template x-for="(kw, k) in answer.keywords" :key="k">
+                                                        <span class="border-b border-gray-300 rounded px-1 py-0.5"
+                                                              x-text="kw"></span>
+                                                    </template>
                                                 </div>
-                                            </template>
+                                                <!-- Left: show when opend -->
+                                                <div class="flex items-center gap-2" x-show="open">
+                                                    <div class="flex items-center justify-center w-5 h-5 rounded-full bg-white text-black text-xs font-bold">
+                                                        <span x-text="i + 1"></span>
+                                                    </div>
+                                                    <label class="text-xs text-white font-semibold text-gray-700">Answer
+                                                        Type:</label>
+                                                    <span x-text="answer.Question? 'Frage' : answer.Target[0].type"
+                                                          class="text-xs text-white font-semibold text-gray-700 w-28"></span>
+                                                </div>
 
-                                            <!-- Add new keyword -->
-                                            <div class="relative inline-flex items-center">
-                                                <input type="text" placeholder="Add keyword..."
-                                                    class="rounded-full border px-3 py-1 text-xs pr-3"
-                                                    x-model="newKeyword" x-ref="newKeywordInput"
-                                                    @keydown.enter.prevent="
+                                                <!-- Right: toggle icon (always shown) -->
+                                                <div class="ml-auto text-xs text-grey-800 ml-2 cursor-pointer select-none">
+                                                    <span x-text="open ? '▲' : '▼'"></span>
+                                                </div>
+                                            </div>
+
+                                            <!-- Full editor (only shown when open) -->
+                                            <div x-show="open" class="p-4 space-y-3 border-t border-gray-200">
+
+
+                                                <!-- Keyword input & editor -->
+                                                <div x-data="{ newKeyword: '' }">
+                                                    <label class="text-xs font-bold block mb-1">Keywords</label>
+                                                    <div class="flex flex-wrap gap-2 mb-2">
+                                                        <template x-for="(kw, index) in answer.keywords" :key="index">
+                                                            <div class="relative inline-flex items-center">
+                                                                <button x-show="kw.startsWith('*')"
+                                                                        @click="answer.keywords[index] = kw.replace(/^\*\s*/, '')"
+                                                                        class="text-green-600 text-xs hover:text-green-800"
+                                                                        title="Confirm">*
+                                                                </button>
+                                                                <input type="text" x-model="answer.keywords[index]"
+                                                                       class="rounded-full border px-3 py-1 text-xs pl-2 pr-5"
+                                                                       :class="kw.startsWith('*') ? 'bg-highlight-green' : ''"
+                                                                       :style="{ width: (kw.length + 2) + 'ch', minWidth: '7ch' }"/>
+                                                                <button @click="answer.keywords.splice(index, 1)"
+                                                                        class="absolute right-1 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 text-xs">
+                                                                    ×
+                                                                </button>
+                                                            </div>
+                                                        </template>
+
+                                                        <!-- Add new keyword -->
+                                                        <div class="relative inline-flex items-center">
+                                                            <input type="text" placeholder="Add keyword..."
+                                                                   class="rounded-full border px-3 py-1 text-xs pr-3"
+                                                                   x-model="newKeyword" x-ref="newKeywordInput"
+                                                                   @keydown.enter.prevent="
                                             if (newKeyword.trim()) {
                                             answer.keywords.push(newKeyword.trim());
                                             newKeyword = '';
                                             $nextTick(() => $refs.newKeywordInput.focus());
                                             }"
-                                                    @blur="
+                                                                   @blur="
                                             if (newKeyword?.trim()) {
                                             answer.keywords.push(newKeyword.trim());
                                             newKeyword = '';
                                             }"/>
-                                            </div>
-                                        </div>
-                                    </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
 
-                                    <div class="flex items-center space-x-2">
-                                        <label class="text-xs font-bold text-gray-700">Ziel</label>
-                                        <!-- Target selector for ARTICLE/target -->
-                                        <template x-for="(target, i) in answer.Target" :key="'target-' + i">
-                                            <div x-data="{ targetSelectionOpen: false, openGrp: null }"
-                                                class="flex items-center space-x-2 relative mt-1"
-                                                @dblclick="$store.globalData.answerQuickSet(target)">
-                                                <!-- Button -->
-                                                <button
-                                                        @click="
+                                                <div class="flex items-center space-x-2">
+                                                    <label class="text-xs font-bold text-gray-700">Ziel</label>
+                                                    <!-- Target selector for FAQ/target -->
+                                                    <template x-for="(target, i) in answer.Target" :key="'target-' + i">
+                                                        <div x-data="{ targetSelectionOpen: false, openGrp: null }"
+                                                             class="flex items-center space-x-2 relative mt-1">
+                                                            <!-- Button -->
+                                                            <button
+                                                                    @click="
                                         if (!targetSelectionOpen) {
-                                        const groups = $store.globalData.groupedOptions(i === 0 ? ['Targets', 'ARTICLEs'] : ['Targets']);
+                                        const groups = $store.globalData.groupedOptions(i === 0 ? ['Targets', 'FAQs'] : ['Targets']);
                                         openGrp = groups.length ? groups[0].group : null;
                                         }
                                         targetSelectionOpen = !targetSelectionOpen;
                                     "
-                                                        class="flex items-center justify-between px-2 py-1 bg-white border rounded text-xs w-full max-w-40"
-                                                        :title="$store.globalData.labelForSelection(target)"
-                                                >
-                                                    <span class="truncate"
-                                                        x-text="answer.Question ? 'Zusatzfrage' : $store.globalData.labelForSelection(target) || 'Select'"></span>
-                                                    <span x-text="targetSelectionOpen ? '▲' : '▼'"></span>
-                                                </button>
-
-                                                <!-- Dropdown -->
-                                                <div
-                                                        x-show="targetSelectionOpen"
-                                                        @click.away="targetSelectionOpen = false"
-                                                        class="absolute top-full left-0 mt-0.5 z-50 w-max max-w-screen-sm bg-white border rounded shadow text-xs max-h-64 overflow-y-auto"
-                                                >
-                                                    <!-- Groups -->
-                                                    <template
-                                                            x-for="group in $store.globalData.groupedOptions(i === 0 ? ['Targets', 'ARTICLEs'] : ['Targets'])"
-                                                            :key="group.group"
-                                                    >
-                                                        <div>
-                                                            <!-- Group header -->
-                                                            <button
-                                                                    @click.stop="openGrp = (openGrp === group.group ? null : group.group);"
-                                                                    class="w-full flex items-center justify-between px-2 py-1 bg-gray-50 hover:bg-gray-100 text-left"
+                                                                    class="flex items-center justify-between px-2 py-1 bg-white border rounded text-xs w-full max-w-40"
+                                                                    :title="$store.globalData.labelForSelection(target)"
                                                             >
-                                                                <span x-text="group.group"></span>
-                                                                <span x-text="openGrp === group.group ? '–' : '+'"></span>
+                                                    <span class="truncate"
+                                                          x-text="answer.Question ? 'Zusatzfrage' : $store.globalData.labelForSelection(target) || 'Select'"></span>
+                                                                <span x-text="targetSelectionOpen ? '▲' : '▼'"></span>
                                                             </button>
 
-                                                            <!-- Group items -->
-                                                            <div x-show="openGrp === group.group">
-                                                                <template x-for="item in group.items" :key="item.key">
-                                                                    <div
-                                                                            @click="
+                                                            <!-- Dropdown -->
+                                                            <div
+                                                                    x-show="targetSelectionOpen"
+                                                                    @click.away="targetSelectionOpen = false"
+                                                                    class="absolute top-full left-0 mt-0.5 z-50 w-max max-w-screen-sm bg-white border rounded shadow text-xs max-h-64 overflow-y-auto"
+                                                            >
+                                                                <!-- Groups -->
+                                                                <template
+                                                                        x-for="group in $store.globalData.groupedOptions(i === 0 ? ['Routing', 'FAQ'] : ['Routing'])"
+                                                                        :key="group.group"
+                                                                >
+                                                                    <div>
+                                                                        <!-- Group header -->
+                                                                        <button
+                                                                                @click.stop="openGrp = (openGrp === group.group ? null : group.group);"
+                                                                                class="w-full flex items-center justify-between px-2 py-1 bg-gray-50 hover:bg-gray-100 text-left"
+                                                                        >
+                                                                            <span x-text="group.group"></span>
+                                                                            <span x-text="openGrp === group.group ? '–' : '+'"></span>
+                                                                        </button>
+
+                                                                        <!-- Group items -->
+                                                                        <div x-show="openGrp === group.group">
+                                                                            <template x-for="item in group.items"
+                                                                                      :key="item.key">
+                                                                                <div
+                                                                                        @click="
                                                 if (answer.Question) {
                                                     if (confirm('Die Zusatzfrage wird gelöscht. Fortfahren?')) {
                                                     answer.Target[i] = item.value;
@@ -207,134 +284,95 @@
                                                     }
                                                 } else {
                                                     answer.Target[i] = item.value;
-                                                    if (i == 0 && item.value.type !== 'article') {
+                                                    if (i == 0 && item.value.type !== 'faq') {
                                                     answer.Target.splice(1, 1);
                                                     }
                                                     targetSelectionOpen = false;
                                                 }
                                                 "
-                                                                            :class="$store.globalData.isSelected(target, item.value) ? 'bg-blue-100 font-semibold' : 'hover:bg-gray-100'"
-                                                                            class="cursor-pointer px-2 py-1"
-                                                                    >
-                                                                        <span x-text="item.label"></span>
+                                                                                        :class="isSelected(target, item.value) ? 'bg-blue-100 font-semibold' : 'hover:bg-gray-100'"
+                                                                                        class="cursor-pointer px-2 py-1"
+                                                                                >
+                                                                                    <span x-text="item.label"></span>
+                                                                                </div>
+                                                                            </template>
+                                                                        </div>
                                                                     </div>
                                                                 </template>
+                                                                <!-- Additional Question -->
+                                                                <div
+                                                                        @click="answer.Question = newQuestions();
+                                                                                answer.Target.splice(0, 2, {});
+                                                                                targetSelectionOpen = false;"
+                                                                        class="text-green-600 px-2 py-1 hover:bg-green-100 border-t border-b cursor-pointer"
+                                                                >
+                                                                    ➕ Zusatzfrage
+                                                                </div>
                                                             </div>
+                                                            <div class="border-l h-5 border-gray-300 mx-2"></div>
                                                         </div>
                                                     </template>
-                                                    <!-- Additional Question -->
-                                                    <div
-                                                            @click="
-                                        answer.Question = $store.globalData.newQuestions();
-                                        answer.Target.splice(0, 2, {});
-                                        targetSelectionOpen = false;
-                                        "
-                                                            class="text-green-600 px-2 py-1 hover:bg-green-100 border-t border-b cursor-pointer"
-                                                    >
-                                                        ➕ Zusatzfrage
+                                                    <!-- Add Target Button -->
+                                                    <div class="flex items-center space-x-2 mt-1"
+                                                         x-show="answer.Target.length === 1 && answer.Target[0]?.type === 'faq'">
+                                                        <button
+                                                                class="text-xs text-white border bg-green-600 border-green-600 px-2 py-0.5 rounded hover:bg-green-700"
+                                                                @click="answer.Target.push({ type: '', value: '' })"
+                                                        >
+                                                            + Target
+                                                        </button>
+                                                        <div class="border-l h-5 border-gray-300 mx-2"></div>
+                                                    </div>
+                                                    <!-- Legitimation checkbox -->
+                                                    <div class="flex items-center space-x-2">
+                                                        <input type="checkbox" x-model="answer.Legitimation"
+                                                               class="text-highlight-blue border-gray-300 rounded focus:ring-blue-500">
+                                                        <label class="text-xs text-gray-700">Legitimation</label>
                                                     </div>
                                                 </div>
-                                                <div class="border-l h-5 border-gray-300 mx-2"></div>
-                                            </div>
-                                        </template>
-                                        <!-- Add Target Button -->
-                                        <div class="flex items-center space-x-2 mt-1"
-                                            x-show="answer.Target.length === 1 && answer.Target[0]?.type === 'article'">
-                                            <button
-                                                    class="text-xs text-white border bg-green-600 border-green-600 px-2 py-0.5 rounded hover:bg-green-700"
-                                                    @click="answer.Target.push({ type: '', value: '' })"
-                                            >
-                                                + Target
-                                            </button>
-                                            <div class="border-l h-5 border-gray-300 mx-2"></div>
-                                        </div>
-                                        <!-- Legitimation checkbox -->
-                                        <div class="flex items-center space-x-2">
-                                            <input type="checkbox" x-model="answer.Legitimation"
-                                                class="text-highlight-blue border-gray-300 rounded focus:ring-blue-500">
-                                            <label class="text-xs text-gray-700">Legitimation</label>
-                                        </div>
-                                    </div>
 
 
-                                    <!-- Recursive sub-question (collapsible) -->
-                                    <template x-if="answer.Question">
-                                        <div class="pl-4 mt-4 border-l-2 border-highlight-blue" x-data="{ openSub: false }">
-                                            <div class="flex items-center justify-between cursor-pointer bg-highlight-blue px-2 py-1 rounded"
-                                                @click="openSub = !openSub">
-                                                <span class="text-xs font-semibold text-white">Subquestion:</span>
-                                                <span class="text-xs text-white flex-1 ml-2 truncate"
-                                                    x-text="answer.Question?.Prompt || '—'"></span>
-                                                <span class="text-xs text-grey-800 ml-2" x-text="openSub ? '▲' : '▼'"></span>
-                                            </div>
+                                                <!-- Recursive sub-question (collapsible) -->
+                                                <template x-if="answer.Question">
+                                                    <div class="pl-4 mt-4 border-l-2 border-highlight-blue"
+                                                         x-data="{ openSub: false }">
+                                                        <div class="flex items-center justify-between cursor-pointer bg-highlight-blue px-2 py-1 rounded"
+                                                             @click="openSub = !openSub">
+                                                            <span class="text-xs font-semibold text-white">Subquestion:</span>
+                                                            <span class="text-xs text-white flex-1 ml-2 truncate"
+                                                                  x-text="answer.Question?.Prompt || '—'"></span>
+                                                            <span class="text-xs text-grey-800 ml-2"
+                                                                  x-text="openSub ? '▲' : '▼'"></span>
+                                                        </div>
 
-                                            <div x-show="openSub" class="mt-2">
-                                                <x-component
-                                                        template="diy-question-editor"
-                                                        styles="global"
-                                                        :key="i + '-subquestion'"
-                                                        x-data="{ get Question() { return answer.Question ?? newQuestions(); } }"
-                                                ></x-component>
+                                                        <div x-show="openSub" class="mt-2">
+                                                            <x-component
+                                                                    template="diy-question-editor"
+                                                                    styles="global"
+                                                                    :key="i + '-subquestion'"
+                                                                    x-data="{ get Question() { return answer.Question ?? newQuestions(); } }"
+                                                            ></x-component>
+                                                        </div>
+                                                    </div>
+                                                </template>
                                             </div>
                                         </div>
                                     </template>
+
+                                    <!-- Neue Antwort hinzufügen -->
+                                    <div>
+                                        <button type="button"
+                                                class="inline-flex items-center bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-3 py-1.5 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                                @click="Question.Answers.push(newAnswer())">
+                                            + Antwort
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </template>
-
-                        <!-- Neue Antwort hinzufügen -->
-                        <div>
-                            <button type="button"
-                                    class="inline-flex items-center bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-3 py-1.5 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                                    @click="Question.Answers.push($store.globalData.newAnswer())">
-                                + Antwort
-                            </button>
-                        </div>
                     </div>
                 </div>
-            </template>
+            </section>
         </div>
-      <!-- Right Side Selection List -->
-      <div class="col-span-1 h-full border-l overflow-y-visible">
-        <h3 class="text-sm font-semibold bg-dark-grey text-gray-200 px-3 py-3 w-full mb-0">
-          Verfügbare Fragegruppen
-        </h3>
-
-        <template x-if="$store.globalData.diys && $store.globalData.diys.length">
-          <div>
-            <template x-for="(entry, i) in $store.globalData.diys" :key="i">
-              <div
-                class="flex items-center justify-between p-2 border-b cursor-pointer mx-2 mt-2"
-                :class="($store.globalData.selectedDiyIndex === i ? 'bg-blue-100 rounded-l' : '')"
-                @click="$store.globalData.selectedDiyIndex = i">
-                <div class="flex flex-col text-left">
-                  <span class="text-sm font-medium" x-text="entry.Name || 'Unnamed'"></span>
-                  <span class="text-xs text-gray-500" x-text="entry.Description || '—'"></span>
-                </div>
-                <button
-                  @click.stop="$store.modal.confirm({
-                    title: 'Wollen Sie das Diy wirklich löschen?',
-                    message: 'Diese Aktion kann nicht rückgängig gemacht werden.',
-                    onConfirm: () => Alpine.store('globalData').removeDiy(i)
-                  })"
-                  class="ml-2 w-6 h-6 flex items-center justify-center rounded transition-all duration-200
-                         text-gray-400 hover:text-red-500 hover:shadow-[0_0_4px_2px_rgba(239,68,68,0.6)]">
-                  <span class="text-[0.5rem]">❌</span>
-                </button>
-              </div>
-            </template>
-
-            <div class="flex justify-center mt-3 mb-2 mx-2">
-              <button
-                class="bg-green-600 text-white text-xs px-3 py-1 rounded"
-                @click="$store.globalData.diys.push({ Name: '', Description: '', Question: { Prompt: '', Reprompt: '', Answers: [] } }); $store.globalData.selectedDiyIndex = $store.globalData.diys.length - 1">
-                + Neue Fragegruppe
-              </button>
-            </div>
-          </div>
-        </template>
-      </div>
-
     </div>
-  </div>
 </div>

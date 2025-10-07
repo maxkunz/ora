@@ -48,9 +48,8 @@
 
     <!-- Info Agent Tile -->
     <a href="/info_agent"
-        @click=" $store.globalData.activeTab = 'info_agents'; 
-                            const agents = Object.keys($store.globalData.info_agents);
-                            $store.globalData.selectedInfoAgentId = agents.length > 0 ? agents[0] : null"
+        @click=" const agents = Object.keys($store.globalData.info_agents);
+                 $store.globalData.selectedInfoAgentId = agents.length > 0 ? agents[0] : null"
        class="group bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 transition-all duration-200 rounded-md p-4 flex flex-col gap-2 shadow-sm hover:shadow-md">
         <div class="flex items-center gap-3">
             <!-- Icon -->

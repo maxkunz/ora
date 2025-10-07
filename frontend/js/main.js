@@ -8,10 +8,13 @@ import {AIGenService} from './AIGenService.js';
 import { setupWizard } from './setup_wizard.js';
 import '../css/styles.css';
 import { infoAgentModule } from "../pages/info_agent/info_agent.js";
+import { diyModule } from "../pages/diy/diy.js";
 import { faqModule } from "../pages/faq/faq.js";
 import { basicMissionsModule} from "../pages/basic_missions/basic_missions.js";
 import { matrixModule } from "../pages/matrix/matrix.js";
 import { deploymentModule } from "../pages/deployment/deployment.js";
+import { announcementModule } from "../pages/announcement/announcement.js";
+
 const architectApi = new platformClient.ArchitectApi();
 
 
@@ -23,10 +26,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('alpine:init', () => {
     Alpine.data("infoAgentModule", infoAgentModule);
+    Alpine.data("diyModule", diyModule);
     Alpine.data("faqModule", faqModule);
     Alpine.data("basicMissionsModule", basicMissionsModule);
     Alpine.data("matrixModule", matrixModule);
     Alpine.data("deploymentModule", deploymentModule);
+    Alpine.data("announcementModule", announcementModule);
 
     window.addEventListener("keydown", (e) => {
     const ctrlOrCmd = e.ctrlKey || e.metaKey;
@@ -51,7 +56,6 @@ document.addEventListener('alpine:init', () => {
         cmApi: new platformClient.ContentManagementApi()
     })
     let reactive_data = window.Alpine.reactive({
-        activeTab: 'diys',
         mouseX: null,
         mouseY: null,
         leaveTimeout: null,
@@ -74,17 +78,20 @@ document.addEventListener('alpine:init', () => {
         diys: [],
         info_agents: {},
         basic_missions: {},
-        announcement: [],
+        announcements: [],
         faqs: {},
 
+        //temp. genesys objects
+        resources: {},
+        availableConfigurations: [],
+        availableQueues: [],
+        
         fileMenu: {
             showNewInput: false,
             newVersionName: '',
             showPanel: null, // 'saveAs' | 'load' | 'delete'
         },
-        availableConfigurations: [],
-        availableQueues: [],
-        availableTargetTypes: ["Queue", "Generic"],
+
 
         // --- Shared Genesys SDK & Auth Data ---
         genesys: {
@@ -97,13 +104,11 @@ document.addEventListener('alpine:init', () => {
             helper: genesys,
         },
         
-        resources: {},
-
         // todo hard coded values need to be dynamic?
         client_id: "be3addac-a274-47b2-b382-86588cbba3e3",
         datatable_id: "0de34a0f-a83b-4b44-94c8-e94c8da5f4d6",
+        version: 'draft', //row key
         content_workspace_id: "017fae6e-99c6-4733-b885-7fef4398c037",
-        version: 'draft',
         info_agents_knowledge_endpoint: "https://d6id4rhutb6fpeqtyrygqr63aa0pxgwk.lambda-url.eu-central-1.on.aws/",
 
         data: null,
@@ -111,16 +116,6 @@ document.addEventListener('alpine:init', () => {
         dropdowns: {},
 
         resetUI() {
-            // reset some selected.. variabels and menu flags
-            this.selectedInfoAgentId = null;
-            this.selectedDiyIndex = null;
-            this.selectedTargetId = null;
-            this.selectedArticleId = null;
-            this.selectedGuideId = null;
-            this.editType = null;
-            this.editItem = null;
-
-            
             this.fileMenu.showNewInput = false;
             this.fileMenu.newVersionName = '';
             this.fileMenu.showPanel = null;
@@ -132,80 +127,7 @@ document.addEventListener('alpine:init', () => {
 
             console.log("UI reseted.");
         },
-        selectedArticleId: null,
-        get selectedArticle() {
-            return Alpine.store("globalData").selectedArticleId ? Alpine.store("globalData").articles[Alpine.store("globalData").selectedArticleId] : null;
-        },
-        selectedGuideId: null,
-        get selectedGuide() {
-            const id = Alpine.store("globalData").selectedGuideId;
-            return id ? Alpine.store("globalData").guides[id] : null;
-        },
-        selectedInfoAgentId: null,
-        get selectedInfoAgent() {
-            return Alpine.store("globalData").selectedInfoAgentId !== null ? Alpine.store("globalData").info_agents[Alpine.store("globalData").selectedInfoAgentId] : null;
-        },
-        
-        selectedDiyIndex: null,
-        get selectedDiy() {
-            
-            return Alpine.store("globalData").selectedDiyIndex !== null ? Alpine.store("globalData").diys[Alpine.store("globalData").selectedDiyIndex] : null;
-        },
-        selectedTargetId: null,
-        get selectedTarget() {
-            return Alpine.store("globalData").selectedTargetId ? Alpine.store("globalData").targets[Alpine.store("globalData").selectedTargetId] : null;
-        },
 
-        addNewInfoAgent() {
-        const id = crypto.randomUUID();
-        this.info_agents[id] = {
-            name: '',
-            personality: '',
-            instruction: '',
-            trainingsContent: [],
-            agent_id: id,
-            tenant_id: this.client_id
-        };
-        this.selectedInfoAgentId = id;
-        },
-        addNewTarget() {
-            const newId = crypto.randomUUID()
-            Alpine.store("globalData").targets[newId] = {id: newId, type: 'queue', value: 'NewTarget'};
-            Alpine.store("globalData").selectedTargetId = newId;
-        },
-        removeTarget(id) {
-            window.Alpine.store("toast").show(`Target gelöscht!`, "success");
-            delete Alpine.store("globalData").targets[id];
-            if (Alpine.store("globalData").selectedTargetId === id) {
-                Alpine.store("globalData").selectedTargetId = null;
-            }
-        },
-        newDiy() {
-            return {
-                Name: '',
-                Description: '',
-                Question: Alpine.store("globalData").newQuestions()
-            }
-        },
-        removeDiy(id) {
-            window.Alpine.store("toast").show(`Diy gelöscht!`, "success");
-            Alpine.store("globalData").diys.splice(id, 1)
-            if (Alpine.store("globalData").selectedDiyIndex === id) {
-                Alpine.store("globalData").selectedDiyIndex = null;
-            }
-        },
-        newQuestions() {
-            return {
-                Prompt: '',
-                Reprompt: '',
-                Answers: [],
-                Target: [{}],
-                Question: undefined
-            };
-        },
-        newAnswer() {
-            return {keywords: [], Type: 'article', Legitimation: false, Target: [{}]}
-        },
         // --- Version helpers & Save ---
         bumpMinorVersion(ver) {
             const parts = String(ver ?? '0.0').split('.');
@@ -237,24 +159,16 @@ document.addEventListener('alpine:init', () => {
                 window.Alpine.store('toast').show('Speichern fehlgeschlagen.', 'error');
             }
         },
-        flatOptions(includedGroups = []) {
-            return Alpine.store("globalData")
-                .groupedOptions(includedGroups)
-                .flatMap(g => Array.isArray(g.items) ? g.items : [g.items]);
-        },
         labelForSelection(target) {
             if (!target) return '';
             else if (target.type == 'route') 
                 return (target.value && target.value.name) ? target.value.name : '';
 
-            const hit = Alpine.store("globalData").flatOptions().find(i =>
+            const includedGroups = []
+            const flatOptions = Alpine.store("globalData").groupedOptions(includedGroups).flatMap(g => Array.isArray(g.items) ? g.items : [g.items]);
+            const hit = flatOptions.find(i =>
                 i.value.type === target.type && i.value.value === target.value); // Todo: maybe we have to rethink this and make the search more efficient as well as robust for generic/queue targets.
             return hit ? hit.label : '';
-            
-        },
-
-        isSelected(target, val) {
-            return target && target.type === val.type && target.value === val.value;
         },
 
         // Provide grouped list for the dropdown
@@ -291,50 +205,58 @@ document.addEventListener('alpine:init', () => {
             const dataDrivenGroups = [
                 {
                     group: 'Routing',
-                    items: Object.values(Alpine.store("globalData").targets).map(t => ({
-                        key: t.id,
-                        value: { type: "target", value: t.id },
-                        label: t.value
+                    items: Object.values(Alpine.store("globalData").targets).map(target => ({
+                        key: target.id,
+                        value: { type: "target", value: target.id },
+                        label: target.value
                     }))
                 },
                 {
                     group: 'Basic Info',
-                    items: Object.values(Alpine.store("globalData").articles).map(f => ({
-                        key: f.id,
-                        value: { type: 'article', value: f.id },
-                        label: f.title
+                    items: Object.values(Alpine.store("globalData").articles).map(article => ({
+                        key: article.id,
+                        value: { type: 'article', value: article.id },
+                        label: article.title
                     }))
                 },
                 {
                     group: 'AI Mission',
-                    items: Object.values(Alpine.store("globalData").guides).map(g => ({
-                        key: g.id,
-                        value: { type: 'guide', value: g.id },
-                        label: g.name
+                    items: Object.values(Alpine.store("globalData").guides).map(guide => ({
+                        key: guide.id,
+                        value: { type: 'guide', value: guide.id },
+                        label: guide.name
                     }))
                 },
                 {
                     group: 'DIY',
-                    items: Object.values(Alpine.store("globalData").diys).map(f => ({
-                        key: f.id,
-                        value: { type: 'diy', value: f.id },
-                        label: f.Name
+                    items: Object.values(Alpine.store("globalData").diys).map(diy => ({
+                        key: diy.id,
+                        value: { type: 'diy', value: diy.id },
+                        label: diy.Name
+                    }))
+                },
+                {
+                    group: 'FAQ',
+                    items: Object.values(Alpine.store("globalData").faqs).map(faq => ({
+                        key: faq.id,
+                        value: { type: 'faq', value: faq.id },
+                        label: faq.topic
                     }))
                 },
                 {
                     group: 'AI Info',
-                    items: Object.values(Alpine.store("globalData").info_agents).map(f => ({
-                        key: f.agent_id,
-                        value: { type: 'info_agent', value: f.agent_id },
-                        label: f.name
+                    items: Object.values(Alpine.store("globalData").info_agents).map(info_agent => ({
+                        key: info_agent.agent_id,
+                        value: { type: 'info_agent', value: info_agent.agent_id },
+                        label: info_agent.name
                     }))
                 },
                 {
                     group: 'Basic Mission',
-                    items: Object.values(Alpine.store("globalData").basic_missions).map(f => ({
-                        key: f.id,
-                        value: { type: 'basic_mission', value: f.id },
-                        label: f.name
+                    items: Object.values(Alpine.store("globalData").basic_missions).map(basic_mission => ({
+                        key: basic_mission.id,
+                        value: { type: 'basic_mission', value: basic_mission.id },
+                        label: basic_mission.name
                     }))
                 }
             ];
