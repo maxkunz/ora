@@ -1,0 +1,186 @@
+<div x-data="deploymentModule()" x-cloak class="px-4 py-6 overflow-auto">
+  <h1 class="text-2xl font-semibold text-center">Deployment</h1>
+
+  <!-- Fixed canvas; no responsive geometry -->
+  <div class="relative mx-auto mt-10 w-[1200px] h-[420px]">
+
+    <!-- Lines (fixed coordinates to card side midpoints) -->
+    <svg class="absolute left-0 top-0 pointer-events-none" viewBox="0 0 1200 420" width="1200" height="420">
+      <!-- Draft (center 156,240; right mid x=231) → Staging (center 456,240; left mid x=381) -->
+      <line x1="231" y1="240" x2="381" y2="240"
+            stroke="#D1D5DB" stroke-width="3" stroke-linecap="round"></line>
+
+      <!-- Staging right mid (456+75=531,240) → Production left mid (756-75=681,168) -->
+      <line x1="531" y1="240" x2="681" y2="168"
+            stroke="#D1D5DB" stroke-width="3" stroke-linecap="round"></line>
+
+      <!-- Production right mid (756+75=831,168) → Backup left mid (1056-75=981,240) -->
+      <line x1="831" y1="168" x2="981" y2="240"
+            stroke="#D1D5DB" stroke-width="3" stroke-linecap="round"></line>
+    </svg>
+
+    <!-- Controls at line midpoints -->
+    <!-- Draft → Staging midpoint: (306,240) -->
+    <div class="absolute" style="left:306px; top:220px; transform:translate(-50%,-100%);">
+      <button
+  class="relative text-xs px-3 py-1.5 rounded-md border border-transparent
+         hover:border-gray-300 hover:bg-gray-50 overflow-hidden select-none"
+  @pointerdown="holdStart(() => deployToStaging(), 800, 'deploy-staging')"
+  @pointerenter="holdHoverEnter('deploy-staging')"
+  @pointerup="holdEnd()" @pointerleave="holdHoverLeave('deploy-staging')" @pointercancel="holdEnd()"
+  @keydown.space.prevent="holdStart(() => deployToStaging(), 800, 'deploy-staging')"
+  @keyup.space.prevent="holdEnd()"
+  role="progressbar"
+  :aria-valuemin="0" :aria-valuemax="100"
+  :aria-valuenow="Math.round(((_holdKey === 'deploy-staging' ? holdProgress : (_holdCompletedKey === 'deploy-staging' ? 1 : 0)))*100)"
+  :aria-label="'Hold to deploy to Staging'"
+>
+  <span class="relative z-10">Deploy →</span>
+
+  <!-- filling background -->
+  <span class="absolute inset-0 pointer-events-none">
+    <span
+      class="absolute inset-y-0 left-0 bg-blue-500/20 motion-reduce:transition-none"
+      :style="{ width: holdBarWidth('deploy-staging'), transition: 'width 120ms linear' }"
+    ></span>
+  </span>
+</button>
+    </div>
+    <div class="absolute" style="left:306px; top:248px; transform:translate(-50%,0);">
+      <button
+        class="relative text-xs px-3 py-1.5 rounded-md border border-transparent hover:border-gray-300 hover:bg-gray-50 overflow-hidden select-none"
+        @pointerdown="holdStart(() => revertToDraft(), 800, 'rollback')"
+        @pointerenter="holdHoverEnter('rollback')"
+        @pointerup="holdEnd()" @pointerleave="holdHoverLeave('rollback')" @pointercancel="holdEnd()"
+        @keydown.space.prevent="holdStart(() => revertToDraft(), 800, 'rollback')"
+        @keyup.space.prevent="holdEnd()"
+        role="progressbar"
+        :aria-valuemin="0" :aria-valuemax="100"
+        :aria-valuenow="Math.round(((_holdKey === 'rollback' ? holdProgress : (_holdCompletedKey === 'rollback' ? 1 : 0)))*100)"
+        :aria-label="'Hold to rollback to Draft'"
+      >
+        <span class="relative z-10">← Rollback</span>
+        <span class="absolute inset-0 pointer-events-none">
+          <span
+            class="absolute inset-y-0 left-0 bg-blue-500/20 motion-reduce:transition-none"
+            :style="{ width: holdBarWidth('rollback'), transition: 'width 120ms linear' }"
+          ></span>
+        </span>
+      </button>
+    </div>
+
+    <!-- Staging → Production midpoint: (606,204) -->
+    <div class="absolute" style="left:606px; top:184px; transform:translate(-50%,-100%);">
+      <button
+        class="relative text-xs px-3 py-1.5 rounded-md border border-transparent hover:border-gray-300 hover:bg-gray-50 overflow-hidden select-none"
+        @pointerdown="holdStart(() => launchToProduction(), 800, 'launch')"
+        @pointerenter="holdHoverEnter('launch')"
+        @pointerup="holdEnd()" @pointerleave="holdHoverLeave('launch')" @pointercancel="holdEnd()"
+        @keydown.space.prevent="holdStart(() => launchToProduction(), 800, 'launch')"
+        @keyup.space.prevent="holdEnd()"
+        role="progressbar"
+        :aria-valuemin="0" :aria-valuemax="100"
+        :aria-valuenow="Math.round(((_holdKey === 'launch' ? holdProgress : (_holdCompletedKey === 'launch' ? 1 : 0)))*100)"
+        :aria-label="'Hold to launch to Production'"
+      >
+        <span class="relative z-10">Launch →</span>
+        <span class="absolute inset-0 pointer-events-none">
+          <span
+            class="absolute inset-y-0 left-0 bg-blue-500/20 motion-reduce:transition-none"
+            :style="{ width: holdBarWidth('launch'), transition: 'width 120ms linear' }"
+          ></span>
+        </span>
+      </button>
+    </div>
+
+    <!-- Production → Backup midpoint: (906,204) -->
+    <div class="absolute text-[11px] uppercase tracking-wide text-gray-500"
+         style="left:906px; top:184px; transform:translate(-50%,-100%);">
+      Auto backup
+    </div>
+    <div class="absolute" style="left:906px; top:224px; transform:translate(-50%,0);">
+      <button
+        class="relative text-xs px-3 py-1.5 rounded-md border border-transparent hover:border-gray-300 hover:bg-gray-50 overflow-hidden select-none"
+        @pointerdown="holdStart(() => restoreBackupToProd(), 800, 'restore')"
+        @pointerenter="holdHoverEnter('restore')"
+        @pointerup="holdEnd()" @pointerleave="holdHoverLeave('restore')" @pointercancel="holdEnd()"
+        @keydown.space.prevent="holdStart(() => restoreBackupToProd(), 800, 'restore')"
+        @keyup.space.prevent="holdEnd()"
+        role="progressbar"
+        :aria-valuemin="0" :aria-valuemax="100"
+        :aria-valuenow="Math.round(((_holdKey === 'restore' ? holdProgress : (_holdCompletedKey === 'restore' ? 1 : 0)))*100)"
+        :aria-label="'Hold to restore Backup to Production'"
+      >
+        <span class="relative z-10">← Restore</span>
+        <span class="absolute inset-0 pointer-events-none">
+          <span
+            class="absolute inset-y-0 left-0 bg-blue-500/20 motion-reduce:transition-none"
+            :style="{ width: holdBarWidth('restore'), transition: 'width 120ms linear' }"
+          ></span>
+        </span>
+      </button>
+    </div>
+
+    <!-- ===== Cards (all 150×118), fixed positions =====
+         Column centers: 156, 456, 756, 1056
+         Baseline centers (y): 240; Production center: 168
+         left = centerX - 75, top = centerY - 59
+    -->
+
+    <!-- Draft: center (156,240) -> left=81, top=181 -->
+    <div class="absolute left-[81px] top-[181px] w-[150px] h-[118px] rounded-2xl border p-4 text-center shadow-sm flex flex-col justify-center" :class="cardColorClass('draft')">
+      <div class="text-sm font-semibold">Draft</div>
+      <div class="mt-1 text-[11px]">
+        <span class="font-semibold">Version:</span>
+        <span class="font-bold" x-text="$store.globalData.meta.deployment.configs.draft.version ?? '-' "></span>
+      </div>
+      <div class="text-[11px] text-gray-500 mt-1">
+        Last change:
+        <span class="block font-medium text-gray-600"
+              x-text="formatDate($store.globalData.meta.deployment.configs.draft.lastChange)"></span>
+      </div>
+    </div>
+
+    <!-- Staging: center (456,240) -> left=381, top=181 -->
+    <div class="absolute left-[381px] top-[181px] w-[150px] h-[118px] rounded-2xl border p-4 text-center shadow-sm flex flex-col justify-center" :class="cardColorClass('staging')">
+      <div class="text-sm font-semibold">Staging</div>
+      <div class="mt-1 text-[11px]">
+        <span class="font-semibold">Version:</span>
+        <span class="font-bold" x-text="$store.globalData.meta.deployment.configs.staging.version ?? '-' "></span>
+      </div>
+      <div class="text-[11px] text-gray-500 mt-1">
+        Last change:
+        <span class="block font-medium text-gray-600"
+              x-text="formatDate($store.globalData.meta.deployment.configs.staging.lastChange)"></span>
+      </div>
+    </div>
+
+    <!-- Production: center (756,168) -> left=681, top=109 -->
+    <div class="absolute left-[681px] top-[109px] w-[150px] h-[118px] rounded-2xl border p-4 text-center shadow-sm flex flex-col justify-center" :class="cardColorClass('production')">
+      <div class="text-sm font-semibold">Production</div>
+      <div class="mt-1 text-[11px]">
+        <span class="font-semibold">Version:</span>
+        <span class="font-bold" x-text="$store.globalData.meta.deployment.configs.production.version ?? '-' "></span>
+      </div>
+      <div class="text-[11px] text-gray-500 mt-1">
+        Last change:
+        <span class="block font-medium text-gray-600"
+              x-text="formatDate($store.globalData.meta.deployment.configs.production.lastChange)"></span>
+      </div>
+    </div>
+
+    <!-- Backup: center (1056,240) -> left=981, top=181 -->
+    <div class="absolute left-[981px] top-[181px] w-[150px] h-[118px] rounded-2xl border p-4 text-center shadow-sm flex flex-col justify-center" :class="cardColorClass('backup')">
+      <div class="text-sm font-semibold">Backup</div>
+      <div class="mt-1 text-[11px]">
+        <span class="font-semibold">Version:</span>
+        <span class="font-bold" x-text="$store.globalData.meta.deployment.configs.backup.version ?? '-' "></span>
+      </div>
+      <div class="text-[11px] text-gray-500 mt-1">
+        Last change:
+        <span class="block font-medium text-gray-600"
+              x-text="formatDate($store.globalData.meta.deployment.configs.backup.lastChange)"></span>
+      </div>
+    </div>
+  </div>
+</div>
