@@ -15,14 +15,12 @@
       class="h-screen overflow-hidden" >
 
 <div x-data="{ sidebarOpen: true }" class="flex min-h-screen">
-
-
     <aside
-            class="bg-dark-grey text-gray-200 shadow-lg transition-all duration-300 fixed left-0 inset-y-0 overflow-y-auto"
+            class="bg-dark-grey text-gray-200 shadow-lg transition-all duration-300 fixed left-0 inset-y-0 overflow-y-auto relative"
             :class="sidebarOpen ? 'w-64' : 'w-16'">
 
         <!-- Logo & Toggle -->
-        <div class="flex items-center justify-between p-4 border-b">
+        <div class="flex items-center justify-between p-4 border-b relative z-10">
             <div x-show="sidebarOpen" class="flex items-center space-x-2">
                 <img src="./public/logo.png" class="h-8" alt="">
                 <span x-show="sidebarOpen" class="text-lg font-semibold"></span>
@@ -46,7 +44,7 @@
         </div>
 
         <!-- end::Logo -->
-        <nav class="mt-4 space-y-2 px-2">
+        <nav class="mt-4 space-y-2 px-2 relative z-10">
             <a href="/" class="flex items-center space-x-3 px-3 py-2 rounded hover:bg-gray-200 hover:text-gray-900">
                 <span>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -116,20 +114,55 @@
               </span>
               <span x-show="sidebarOpen" class="text-sm">FAQs</span>
             </a>
+            <a href="/deployment" class="flex items-center space-x-3 px-3 py-2 rounded hover:bg-gray-200 hover:text-gray-900">
+                <span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 0 1-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 0 0 6.16-12.12A14.98 14.98 0 0 0 9.631 8.41m5.96 5.96a14.926 14.926 0 0 1-5.841 2.58m-.119-8.54a6 6 0 0 0-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 0 0-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 0 1-2.448-2.448 14.9 14.9 0 0 1 .06-.312m-2.24 2.39a4.493 4.493 0 0 0-1.757 4.306 4.493 4.493 0 0 0 4.306-1.758M16.5 9a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" />
+                    </svg>
+                </span>
+                <span x-show="sidebarOpen" class="text-sm">Deployment</span>
+            </a>
+
+            <a @click="$store.globalData.openSettingsModal = true" class="flex items-center space-x-3 px-3 py-2 rounded hover:bg-gray-200 hover:text-gray-900">
+                <span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                    </svg>
+                </span>
+              <span x-show="sidebarOpen" class="text-sm">Einstellungen</span>
+            </a>
         </nav>
 
-        <div class="mt-48 ml-2">
-            <img src="./public/atip-grey-vertical.png"
-                 alt="Footer Logo"
-                 class="w-[100px] h-auto block opacity-30 hover:opacity-100 transition-opacity duration-300"/>
+        <!-- Footer-Bereich mit Trennlinie + Save -->
+        <div class="mt-auto px-2 pt-4 border-t border-gray-200 relative z-10">
+        <a
+            @click="$store.globalData.save()"
+            class="flex items-center space-x-3 px-3 py-2 rounded hover:bg-gray-200 text-green-300 hover:text-green-900">
+            <span>
+            <!-- save icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                stroke-width="1.5" stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
+            </svg>
+            </span>
+            <span x-show="sidebarOpen" class="text-sm">Save</span>
+        </a>
+        </div>
+
+        <div aria-hidden="true"
+            class="pointer-events-none absolute inset-x-0 bottom-0 z-0 flex justify-center select-none pb-3
+              transition-all duration-300">
+        <img src="./public/atip-grey-vertical.png"
+            class="opacity-20 transition-all duration-300"
+            :class="sidebarOpen ? 'w-40' : 'w-10'">
         </div>
 
     </aside>
-    <div :class="[
-        sidebarOpen ? 'lg:pl-64' : 'lg:pl-16',
-        'w-full flex-1 flex-col h-screen flex']">
+    <div :class="['w-full flex-1 flex-col h-screen flex min-w-0']">
         <!-- Control Panel -->
-        <div class="w-full bg-dark-grey text-gray-300 text-sm px-4 py-1 flex justify-between items-center shadow-sm select-none relative z-50 sticky">
+        <div x-show="$store.globalData.controlPanelVisible" class="w-full bg-dark-grey text-gray-300 text-sm px-4 py-1 flex justify-between items-center shadow-sm select-none relative z-50 sticky">
             <!-- File Menu -->
 
             <!-- LEFT: Menu Groups -->
@@ -163,7 +196,7 @@
                             </div>
 
                             <!-- SAVE -->
-                            <button @click="$store.globalData.genesys.helper.syncConfigurationToGenesys($store.globalData.datatable_id, $store.globalData.version)"
+                            <button @click="$store.globalData.save()"
                                     class="px-4 py-1 text-left hover:bg-[#5dade2] w-full inline-flex items-center gap-2">
                                 💾 <span>Save</span>
                             </button>
@@ -297,7 +330,7 @@
 
         <!-- LEFT => DIY -->
         
-        <div class="overflow-auto h-full min-h-0 w-full bg-white">
+        <div class="overflow-auto h-full min-h-0 min-w-0 w-full bg-white">
 
             <template x-route="/" x-template="/pages/dashboard.html"></template>
             <template x-route="/dashboard" x-template="/pages/dashboard.html"></template>
@@ -306,6 +339,7 @@
             <template x-route="/info_agent" x-template="/pages/info_agent/info_agent.html"></template>
             <template x-route="/basic_missions" x-template="/pages/basic_missions/basic_missions.html"></template>
             <template x-route="/faqs" x-template="/pages/faq/faq.html"></template>
+            <template x-route="/deployment" x-template="/pages/deployment/deployment.html"></template>
         </div>
 
 
@@ -636,7 +670,6 @@
 <!-- Scripts -->
 <script defer src="https://unpkg.com/@alpinejs/collapse@3.4.2/dist/cdn.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pinecone-router@7.0.3/dist/router.min.js" defer></script>
-<script src="/env-config.js"></script>
 <script type="module" src="js/main.js" defer></script>
 </body>
 </html>

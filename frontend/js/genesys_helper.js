@@ -107,6 +107,38 @@ export async function getConfigurationDataFromGenesys(datatable_id, version) {
         });
 }
 
+export async function copyConfigurationBetweenVersions(datatable_id, fromVersion, toVersion) {
+  const architectApi = window.Alpine.store("genesys").architectApi;
+  const toast = window.Alpine.store("toast");
+
+  if (!fromVersion || !toVersion) {
+    console.error("copyConfigurationBetweenVersions: missing from/to", { fromVersion, toVersion });
+    toast?.show?.("Missing parameters for copy operation.", "error");
+    throw new Error("Invalid parameters");
+  }
+
+  try {
+    toast?.show?.(`Copying ${fromVersion} → ${toVersion}`, "loading");
+
+    // 1) Load the full source row (same shape you persist back into the same datatable)
+    const src = await architectApi.getFlowsDatatableRow(datatable_id, fromVersion, { showbrief: false });
+
+    // 2) Persist the row to the target key; only adjust the key
+    await architectApi.putFlowsDatatableRow(
+      datatable_id,
+      toVersion,
+      { body: { ...src, key: toVersion } }
+    );
+
+    toast?.show?.(`Copied: ${fromVersion} → ${toVersion}`, "success");
+    return true;
+  } catch (err) {
+    console.error("copyConfigurationBetweenVersions failed:", err);
+    toast?.show?.(`Copy failed: ${fromVersion} → ${toVersion}`, "error");
+    throw err;
+  }
+}
+
 // Done
 export async function deleteConfigurationFromGenesys(datatable_id, version) {
     if (!version) {

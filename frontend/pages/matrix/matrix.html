@@ -1,5 +1,5 @@
-<div class="h-full w-full">
-    <!-- The matrix -->
+<div class="overflow-auto min-w-0 min-h-0" x-data="matrixModule()" x-init="init()">
+        <!-- The matrix -->
         <table :class="{'compact-table': $store.globalData.compactMode}"
                class="min-w-max text-sm border-collapse w-full">
             <thead class="">
@@ -14,11 +14,9 @@
                                     class="bg-[#8d8e8f] rounded-full p-1 shadow-[0_0_12px_rgba(0,0,0,1)]"
                                     title="AI Optionen">✨
                             </button>
-                            <span
-                                    x-show="!$store.aiAssist.show"
+                            <span   x-show="!$store.aiAssist.show"
                                     @click.prevent="$store.dropdownMenu.open($event, {}, 'main')"
-                                    class="burger-icon"
-                            >
+                                    class="burger-icon">
                                     ≡
                             </span>
 
@@ -59,7 +57,7 @@
             </tr>
             </thead>
             <tbody>
-            <template x-for="row in $store.globalData.flattenedCategories" :key="row.obj.id">
+            <template x-for="row in flattenedCategories" :key="row.obj.id">
                 <tr>
                     <td :class="[$store.globalData.compactMode ? 'w-32' : 'w-60', 'sticky left-0 z-10 p-1 border-r border-b text-left overflow-visible relative', row.obj.name.startsWith('*') ? 'bg-highlight-orange' : 'bg-gray-100']">
                         <div class="flex items-center justify-between group">
@@ -96,11 +94,11 @@
                     </td>
                     <!-- Concern-Spalte -->
                     <template x-for="con in $store.globalData.concerns" :key="con.id">
-                        <td :class="$store.globalData.cellClasses(row.obj.id, con.id)"
+                        <td :class="cellClasses(row.obj.id, con.id)"
                             class="p-1 border-b border-r relative hover:shadow-md hover:z-20
          cursor-pointer transition duration-150"
                             x-data="{open: false, openGrp: null}"
-                            @click="$store.globalData.openRouteModal(row.obj.id, con.id, row.obj.name, con.name)">
+                            @click="openRouteModal(row.obj.id, con.id, row.obj.name, con.name)">
                             
                             <!-- New Approach -->
                             <div
@@ -109,12 +107,12 @@
                                 <!-- Current value (name) -->
                                 <span
                                     class="block truncate px-2 py-1 text-s"
-                                    x-text="$store.globalData.labelForMatrixSelection(row.obj.id, con.id)"
+                                    x-text="labelForMatrixSelection(row.obj.id, con.id)"
                                 ></span>
 
                                 <!-- Hover '+' overlay only when empty -->
                                 <span
-                                    x-show="!$store.globalData.labelForMatrixSelection(row.obj.id, con.id)"
+                                    x-show="!labelForMatrixSelection(row.obj.id, con.id)"
                                     class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-gray-900"
                                 >
                                     +
@@ -129,7 +127,7 @@
         </table>
 
     <!-- Edit Category/Concern Modal -->
-    <template x-if="$store.globalData.editItem">
+    <template x-if="editItem">
         <div class="fixed inset-0 flex items-center justify-center bg-black bg-black/50 z-50">
             <div class="bg-white rounded-lg p-6 w-[40rem] shadow-lg"
                  x-data="{ newKeyword: '', newPhrase: '' }">
@@ -141,14 +139,14 @@
                             title="AI Optionen">✨
                     </button>
                     <h2 class="text-lg font-semibold mb-4"
-                        x-text="$store.globalData.editType === 'category' ? 'Edit Category' : 'Edit Concern'"></h2>
+                        x-text="editType === 'category' ? 'Edit Category' : 'Edit Concern'"></h2>
                 </div>
                 <!-- NAME -->
                 <label class="text-xs font-bold block mb-1">Name</label>
                 <input type="text"
                        class="border px-2 py-1 text-sm w-full mb-4"
-                       x-model="$store.globalData.editItem.name"
-                       @focus="if ($store.globalData.editItem.name.startsWith('*')) $store.globalData.editItem.name = $store.globalData.editItem.name.replace(/^\*\s*/, '')"
+                       x-model="editItem.name"
+                       @focus="if (editItem.name.startsWith('*')) editItem.name = editItem.name.replace(/^\*\s*/, '')"
                 />
                 <div class="flex flex-col gap-2 mb-4 max-h-96 overflow-y-auto">
 
@@ -156,13 +154,13 @@
                     <!-- KEYWORDS -->
                     <label class="text-xs font-bold block mb-1">Keywords</label>
                     <div class="flex flex-wrap gap-2 mb-4">
-                        <template x-for="(kw, index) in $store.globalData.editItem.keywords" :key="index">
+                        <template x-for="(kw, index) in editItem.keywords" :key="index">
                             <div class="relative inline-flex items-center">
                                 <!-- ✅ Haken links, nur bei unbestätigten (mit *) -->
                                 <button
                                         x-show="kw.startsWith('*')"
                                         @click="
-                                          $store.globalData.editItem.keywords[index] = kw.replace(/^\*\s*/, '');
+                                          editItem.keywords[index] = kw.replace(/^\*\s*/, '');
                                         "
                                         class="text-green-600 text-xs hover:text-green-800"
                                         title="Bestätigen"
@@ -170,12 +168,12 @@
                                 </button>
                                 <input
                                         type="text"
-                                        x-model="$store.globalData.editItem.keywords[index]"
+                                        x-model="editItem.keywords[index]"
                                         class="rounded-full border px-3 py-1 text-xs pl-2 pr-3"
                                         :class="kw.startsWith('*') ? 'bg-[var(--highlight-green)]' : ''"
                                         :style="{ width: (kw.length + 2) + 'ch', minWidth: '7ch' }"
                                 />
-                                <button @click="$store.globalData.editItem.keywords.splice(index, 1)"
+                                <button @click="editItem.keywords.splice(index, 1)"
                                         class="absolute right-1 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 text-xs">
                                     ×
                                 </button>
@@ -191,14 +189,14 @@
                                     x-ref="newKeywordInput"
                                     @keydown.enter.prevent="
                     if (newKeyword.trim()) {
-                      $store.globalData.editItem.keywords.push(newKeyword.trim());
+                      editItem.keywords.push(newKeyword.trim());
                       newKeyword = '';
                       $nextTick(() => $refs.newKeywordInput.focus());
                     }
                   "
                                     @blur="
                     if (newKeyword.trim()) {
-                      $store.globalData.editItem.keywords.push(newKeyword.trim());
+                      editItem.keywords.push(newKeyword.trim());
                       newKeyword = '';
                     }
                   "
@@ -209,20 +207,20 @@
                     <!-- PHRASES -->
                     <label class="text-xs font-bold block mb-1">Phrases</label>
                     <div class="flex flex-col gap-2 mb-4">
-                        <template x-for="(ph, idx) in $store.globalData.editItem.phrases" :key="idx">
+                        <template x-for="(ph, idx) in editItem.phrases" :key="idx">
                             <div class="relative flex items-center gap-2">
                                 <!-- ✅ Haken nur für unbestätigte Phrases (mit *) -->
                                 <button
                                         x-show="ph.startsWith('*')"
-                                        @click="$store.globalData.editItem.phrases[idx] = ph.replace(/^\*\s*/, '')"
+                                        @click="editItem.phrases[idx] = ph.replace(/^\*\s*/, '')"
                                         class="text-green-600 text-xs hover:text-green-800"
                                         title="Bestätigen"
                                 >✔
                                 </button>
-                                <input type="text" x-model="$store.globalData.editItem.phrases[idx]"
+                                <input type="text" x-model="editItem.phrases[idx]"
                                        :class="ph.startsWith('*') ? 'bg-[var(--highlight-green)]' : ''"
                                        class="w-full border px-3 py-1 pr-6 text-sm rounded"/>
-                                <button @click="$store.globalData.editItem.phrases.splice(idx, 1)"
+                                <button @click="editItem.phrases.splice(idx, 1)"
                                         class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 text-xs">
                                     ×
                                 </button>
@@ -236,13 +234,13 @@
                                 x-model="newPhrase"
                                 @keydown.enter.prevent="
                   if (newPhrase.trim()) {
-                    $store.globalData.editItem.phrases.push(newPhrase.trim());
+                    editItem.phrases.push(newPhrase.trim());
                     newPhrase = '';
                   }
                 "
                                 @blur="
                   if (newPhrase.trim()) {
-                    $store.globalData.editItem.phrases.push(newPhrase.trim());
+                    editItem.phrases.push(newPhrase.trim());
                     newPhrase = '';
                   }
                 "
@@ -253,21 +251,21 @@
                 <div class="flex justify-end gap-2 mt-4">
                     <!-- Buttons nur zeigen, wenn unbestätigte *-Elemente existieren -->
                     <template
-                            x-if="($store.globalData.editItem.keywords || []).some(k => k.startsWith('*')) || ($store.globalData.editItem.phrases || []).some(p => p.startsWith('*'))">
+                            x-if="(editItem.keywords || []).some(k => k.startsWith('*')) || (editItem.phrases || []).some(p => p.startsWith('*'))">
                         <div class="flex gap-2">
                             <button
-                                    @click="$store.globalData.closeEditModal(true)"
+                                    @click="closeEditModal(true)"
                                     class="text-sm px-3 py-1 bg-green-400 text-white rounded">Neue übernehmen
                             </button>
                             <button
-                                    @click="$store.globalData.closeEditModal(false)"
+                                    @click="closeEditModal(false)"
                                     class="text-sm px-3 py-1 bg-red-400 text-white rounded">Neue verwerfen
                             </button>
                         </div>
                     </template>
 
                     <!-- Immer verfügbarer Close-Button -->
-                    <button class="text-sm px-3 py-1 bg-gray-200 rounded" @click="$store.globalData.closeEditModal()">
+                    <button class="text-sm px-3 py-1 bg-gray-200 rounded" @click="closeEditModal()">
                         Schließen
                     </button>
                 </div>
@@ -278,7 +276,7 @@
     <!--------------------------------------
      ROUTE Modal 
      --------------------------------------->
-    <template x-if="$store.globalData.route.open">
+    <template x-if="route.open">
       <div class="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center">
         <!-- ca. -20% Höhe -->
         <div class="bg-white w-[76rem] max-w-[95vw] h-[576px] rounded-lg shadow-lg overflow-hidden flex flex-col">
@@ -288,9 +286,9 @@
             <div>
               <h2 class="text-lg font-semibold">Edit Route</h2>
               <div class="text-xs text-gray-500">
-                <span x-text="'Category: ' + ($store.globalData.route.cell?.categoryName ?? '-')"></span>
+                <span x-text="'Category: ' + (route.cell?.categoryName ?? '-')"></span>
                 <span class="mx-1">·</span>
-                <span x-text="'Concern: ' + ($store.globalData.route.cell?.concernName ?? '-')"></span>
+                <span x-text="'Concern: ' + (route.cell?.concernName ?? '-')"></span>
               </div>
             </div>
           </div>
@@ -304,13 +302,13 @@
                 <div class="flex items-center gap-2 p-3 border-b">
                   <div class="text-sm font-semibold">Route</div>
                   <input type="text" class="flex-1 border rounded px-2 py-1 text-xs" placeholder="Neue Route"
-                        x-model="$store.globalData.route.draft.name">
+                        x-model="route.draft.name">
                   <button class="text-xs px-2 py-0.5 rounded bg-green-600 text-white"
                           @click="
-                            $store.globalData.route.draft.modules.splice(
-                              $store.globalData.route.draft.modules.length-1, 0, { type:'article' }
+                            route.draft.modules.splice(
+                              route.draft.modules.length-1, 0, { type:'article' }
                             );
-                            $store.globalData.route.selectedIndex = $store.globalData.route.draft.modules.length-2;
+                            route.selectedIndex = route.draft.modules.length-2;
                           ">
                     + Modul
                   </button>
@@ -318,32 +316,32 @@
 
                 <div class="flex-1 overflow-y-auto p-3 space-y-2">
                   <!-- MID MODULES (all but not last) -->
-                  <template x-for="(mod, i) in $store.globalData.route.draft.modules.slice(0, $store.globalData.route.draft.modules.length-1)" :key="'mid-'+i">
+                  <template x-for="(mod, i) in route.draft.modules.slice(0, route.draft.modules.length-1)" :key="'mid-'+i">
                     <div>
                       <div class="flex items-center gap-2">
                         <button
                           class="w-full text-left px-2 py-2 rounded border transition hover:bg-gray-50 flex items-start gap-2"
                           :class="{
-                            'bg-blue-50 border-blue-300': $store.globalData.route.selectedIndex===i,
-                            'border-gray-200': $store.globalData.route.selectedIndex!==i
+                            'bg-blue-50 border-blue-300': route.selectedIndex===i,
+                            'border-gray-200': route.selectedIndex!==i
                           }"
                           draggable="true"
                           @dragstart="dragIndex = i; $event.dataTransfer.effectAllowed='move'; $event.dataTransfer.setDragImage($el,16,16)"
                           @dragover.prevent="$event.dataTransfer.dropEffect='move'"
                           @drop="
                             (() => {
-                              const mods = $store.globalData.route.draft.modules;
+                              const mods = route.draft.modules;
                               const to = i;
                               if(dragIndex===null || dragIndex===to) return;
                               const end = mods.pop();       // End temporär entnehmen
                               const [m] = mods.splice(dragIndex,1);
                               mods.splice(to,0,m);
                               mods.push(end);               // End zurück
-                              $store.globalData.route.selectedIndex = to;
+                              route.selectedIndex = to;
                               dragIndex = null;
                             })()
                           "
-                          @click="$store.globalData.route.selectedIndex = i">
+                          @click="route.selectedIndex = i">
 
                           <!-- Mid-Icon: vertikaler Balken -->
                           <svg class="shrink-0 h-8 w-5 text-gray-700" viewBox="0 0 20 40" fill="currentColor" aria-hidden="true">
@@ -352,7 +350,7 @@
 
                           <div class="min-w-0">
                             <!-- Typ (mod.type) -->
-                            <div class="text-xs font-medium truncate" x-text="$store.globalData.resolveRouteTypeToLabel(mod.type) || '—'"></div>
+                            <div class="text-xs font-medium truncate" x-text="resolveRouteTypeToLabel(mod.type) || '—'"></div>
                             <div class="text-[10px] text-gray-500 truncate"
                                 x-text="$store.globalData.labelForSelection(mod)"></div>
                           </div>
@@ -360,9 +358,9 @@
 
                         <!-- delete -->
                         <button class="text-[10px] text-red-600 px-1" title="Entfernen"
-                                @click="const mods = $store.globalData.route.draft.modules;
+                                @click="const mods = route.draft.modules;
                                         mods.splice(i,1);
-                                        $store.globalData.route.selectedIndex = mods.length - 1;">✕</button>
+                                        route.selectedIndex = mods.length - 1;">✕</button>
                       </div>
                     </div>
                   </template>
@@ -373,9 +371,9 @@
                       <button
                         class="w-full text-left px-2 py-2 rounded border transition hover:bg-gray-50 flex items-start gap-2"
                         :class="{
-                          'bg-blue-50 border-blue-300': $store.globalData.route.selectedIndex===($store.globalData.route.draft.modules.length-1),
-                          'border-gray-200': $store.globalData.route.selectedIndex!==($store.globalData.route.draft.modules.length-1) }"
-                        @click="$store.globalData.route.selectedIndex = $store.globalData.route.draft.modules.length-1">
+                          'bg-blue-50 border-blue-300': route.selectedIndex===(route.draft.modules.length-1),
+                          'border-gray-200': route.selectedIndex!==(route.draft.modules.length-1) }"
+                        @click="route.selectedIndex = route.draft.modules.length-1">
 
                         <!-- End-Icon: Balken + Kreis -->
                         <svg class="shrink-0 h-8 w-5 text-gray-700" viewBox="0 0 20 40" fill="currentColor" aria-hidden="true">
@@ -386,10 +384,10 @@
                         <div class="min-w-0">
                           <!-- Typ -->
                           <div class="text-xs font-medium truncate"
-                              x-text="$store.globalData.resolveRouteTypeToLabel($store.globalData.route.draft.modules.at(-1)?.type) || 'disconnect'"></div>
+                              x-text="resolveRouteTypeToLabel(route.draft.modules.at(-1)?.type) || 'disconnect'"></div>
                           <!-- Name -->
                           <div class="text-[10px] text-gray-500 truncate"
-                              x-text="$store.globalData.labelForSelection($store.globalData.route.draft.modules.at(-1))"></div>
+                              x-text="$store.globalData.labelForSelection(route.draft.modules.at(-1))"></div>
                         </div>
                       </button>
                       <div class="w-[1.25rem]"></div> <!-- no delete -->
@@ -404,7 +402,7 @@
               <div class="text-sm font-semibold mb-2">Auswahl</div>
 
               <template x-for="grp in $store.globalData.groupedOptions(
-                $store.globalData.route.selectedIndex === ($store.globalData.route.draft.modules.length-1)
+                route.selectedIndex === (route.draft.modules.length-1)
                   ? ['Disconnect','Concierge','Routing','DIY']       // END
                   : ['ID&V','Basic Info','AI Mission','AI Info','Basic Mission'] // MID
               )" :key="'grp-'+grp.group">
@@ -417,15 +415,15 @@
                       :class="{
                         'ring-2 ring-blue-400':
                           (() => {
-                            const selIdx = $store.globalData.route.selectedIndex ?? ($store.globalData.route.draft.modules.length-1);
-                            const m = $store.globalData.route.draft.modules[selIdx];
+                            const selIdx = route.selectedIndex ?? (route.draft.modules.length-1);
+                            const m = route.draft.modules[selIdx];
                             return m?.type === grp.items?.value?.type;
                           })()
                       }"
                       @click="
                         (() => {
-                          const selIdx = $store.globalData.route.selectedIndex ?? ($store.globalData.route.draft.modules.length-1);
-                          $store.globalData.route.draft.modules[selIdx] = { type: grp.items.value.type };
+                          const selIdx = route.selectedIndex ?? (route.draft.modules.length-1);
+                          route.draft.modules[selIdx] = { type: grp.items.value.type };
                         })()
                       "
                     >
@@ -439,8 +437,8 @@
                       :class="{
                         'ring-2 ring-blue-400':
                           (() => {
-                            const selIdx = $store.globalData.route.selectedIndex ?? ($store.globalData.route.draft.modules.length-1);
-                            const m = $store.globalData.route.draft.modules[selIdx];
+                            const selIdx = route.selectedIndex ?? (route.draft.modules.length-1);
+                            const m = route.draft.modules[selIdx];
                             const t = (grp.items?.[0]?.value?.type) || null;
                             return !!t && m?.type === t;
                           })()
@@ -458,17 +456,17 @@
                             :class="{
                               'bg-blue-100':
                                 (() => {
-                                  const selIdx = $store.globalData.route.selectedIndex ?? ($store.globalData.route.draft.modules.length-1);
-                                  const m = $store.globalData.route.draft.modules[selIdx];
+                                  const selIdx = route.selectedIndex ?? (route.draft.modules.length-1);
+                                  const m = route.draft.modules[selIdx];
                                   return m?.type === it.value.type && m?.value === it.value.value;
                                 })()
                             }"
                             @click="
                               (() => {
-                                const selIdx = $store.globalData.route.selectedIndex ?? ($store.globalData.route.draft.modules.length-1);
-                                $store.globalData.route.draft.modules[selIdx] = { type: it.value.type, value: it.value.value };
-                                if (($store.globalData.route.draft.name==='Neue Route' || !$store.globalData.route.draft.name) && it.label) {
-                                  $store.globalData.route.draft.name = it.label;
+                                const selIdx = route.selectedIndex ?? (route.draft.modules.length-1);
+                                route.draft.modules[selIdx] = { type: it.value.type, value: it.value.value };
+                                if ((route.draft.name==='Neue Route' || !route.draft.name) && it.label) {
+                                  route.draft.name = it.label;
                                 }
                               })()
                             "
@@ -486,15 +484,15 @@
             <div class="col-span-4 overflow-hidden">
               <div class="h-full overflow-y-auto p-3" x-data="{
                   get selIdx() { 
-                    const r = $store.globalData.route; 
+                    const r = route; 
                     return (r.selectedIndex ?? (r.draft.modules.length - 1));
                   },
                   get mod() { 
-                    const r = $store.globalData.route; 
+                    const r = route; 
                     return r.draft.modules[this.selIdx] || {}; 
                   },
                   get isEnd() { 
-                    const r = $store.globalData.route; 
+                    const r = route; 
                     return this.selIdx === (r.draft.modules.length - 1); 
                   }
                 }">
@@ -528,13 +526,13 @@
 
                 <!-- Generic Fallback (gilt für alle nicht-statischen Typen, Mid & End) -->
                 <template
-                  x-if="!( $store.globalData.route.selectedIndex === ($store.globalData.route.draft.modules.length-1)
-                          && ['disconnect','concierge'].includes($store.globalData.route.draft.modules.at(-1)?.type) )">
+                  x-if="!( route.selectedIndex === (route.draft.modules.length-1)
+                          && ['disconnect','concierge'].includes(route.draft.modules.at(-1)?.type) )">
                   <div class="mt-3 text-xs space-y-1">
                     <div>
                       <span class="font-semibold">Name:&nbsp;</span>
                       <span x-text="(() => {
-                          const m = $store.globalData.route.draft.modules[$store.globalData.route.selectedIndex];
+                          const m = route.draft.modules[route.selectedIndex];
                           // einfache Module haben keine Unterauswahl
                           if (!m || !m.value) return '—';
                           // in allen DATEN-Gruppen nach dem passenden {type, value} suchen
@@ -554,13 +552,13 @@
                     <div>
                       <span class="font-semibold">Typ:&nbsp;</span>
                       <span
-                        x-text="$store.globalData.resolveRouteTypeToLabel($store.globalData.route.draft.modules[$store.globalData.route.selectedIndex]?.type) || '—'">
+                        x-text="resolveRouteTypeToLabel(route.draft.modules[route.selectedIndex]?.type) || '—'">
                       </span>
                     </div>
 
                     <div>
                       <span class="text-gray-500">ID:&nbsp;</span>
-                      <span x-text="$store.globalData.route.draft.modules[$store.globalData.route.selectedIndex]?.value || '—'"></span>
+                      <span x-text="route.draft.modules[route.selectedIndex]?.value || '—'"></span>
                     </div>
                   </div>
                 </template>
@@ -581,11 +579,11 @@
                   confirmLabel: 'Ja, löschen',
                   cancelLabel: 'Nein',
                   onConfirm: () => {
-                    const cell = $store.globalData.route.cell;
+                    const cell = route.cell;
                     if (cell) {
-                      $store.globalData.matrixUnset(cell.categoryId, cell.concernId);
+                      matrixUnset(cell.categoryId, cell.concernId);
                     }
-                    $store.globalData.closeRouteModal();
+                    closeRouteModal();
                   }
                 })
               "
@@ -593,8 +591,8 @@
               Route löschen
             </button>
             <div class="flex items-center gap-2">
-              <button class="px-3 py-1 text-sm rounded bg-gray-200" @click="$store.globalData.closeRouteModal()">Abbrechen</button>
-              <button class="px-3 py-1 text-sm rounded text-white bg-blue-600" @click="$store.globalData.saveRouteModal()">Bestätigen</button>
+              <button class="px-3 py-1 text-sm rounded bg-gray-200" @click="closeRouteModal()">Abbrechen</button>
+              <button class="px-3 py-1 text-sm rounded text-white bg-blue-600" @click="saveRouteModal()">Bestätigen</button>
             </div>
           </div>
         </div>
@@ -603,6 +601,57 @@
     <!---------------------------------------
      ROUTE MODAL END
      --------------------------------------->
+     <!-- Top Dropdown -->
+    <div
+            x-show="$store.dropdownMenu.visible"
+            x-transition
+            x-cloak
+            :style="{ top: $store.dropdownMenu.posY + 'px', left: $store.dropdownMenu.posX + 'px' }"
+            class="fixed burger-menu-left z-100 bg-white border shadow-lg rounded text-sm w-48"
+            @click.outside="$store.dropdownMenu.close()"
+    >
+        <template x-if="$store.dropdownMenu.type === 'th'">
+            <div>
+                <button @click="openEditModal($store.dropdownMenu.row, 'concern'); $store.dropdownMenu.close()">
+                    Edit
+                </button>
+                <button @click="removeConcern($store.dropdownMenu.row); $store.dropdownMenu.close()">
+                    Delete Concern
+                </button>
+            </div>
+        </template>
+        <template x-if="$store.dropdownMenu.type === 'td'">
+            <div>
+                <button @click="openEditModal($store.dropdownMenu.row.obj, 'category'); $store.dropdownMenu.close()">
+                    Edit
+                </button>
+                <button
+                        x-init="console.log('isParent?', $store.dropdownMenu.row?.isParent)"
+                        x-show="$store.dropdownMenu.row && $store.dropdownMenu.row.isParent"
+                        @click="addSubcategory($store.dropdownMenu.row.obj); $store.dropdownMenu.close()">
+                    +
+                    Subcat
+                </button>
+                <button
+                        x-show="$store.dropdownMenu.row && $store.dropdownMenu.row.isParent"
+                        @click="removeParentCategory($store.dropdownMenu.row.obj); $store.dropdownMenu.close()">
+                    Delete Cat
+                </button>
+                <button
+                        x-show="$store.dropdownMenu.row && !$store.dropdownMenu.row.isParent"
+                        @click="removeSubcategory($store.dropdownMenu.row.obj); $store.dropdownMenu.close()">
+                    Delete Subcat
+                </button>
+            </div>
+        </template>
+
+        <template x-if="$store.dropdownMenu.type === 'main'">
+            <div>
+                <button @click="addParentCategory(); $store.dropdownMenu.close()">+ Kategorien hinzufügen</button>
+                <button @click="addConcern(); $store.dropdownMenu.close()">+ Intention hinzufügen</button>
+            </div>
+        </template>
+    </div>
 </div>
 
 
@@ -612,57 +661,6 @@
 </div>
 
 
-<!-- Top Dropdown -->
-<div
-        x-show="$store.dropdownMenu.visible"
-        x-transition
-        x-cloak
-        :style="{ top: $store.dropdownMenu.posY + 'px', left: $store.dropdownMenu.posX + 'px' }"
-        class="fixed burger-menu-left z-100 bg-white border shadow-lg rounded text-sm w-48"
-        @click.outside="$store.dropdownMenu.close()"
->
-    <template x-if="$store.dropdownMenu.type === 'th'">
-        <div>
-            <button @click="$store.globalData.openEditModal($store.dropdownMenu.row, 'concern'); $store.dropdownMenu.close()">
-                Edit
-            </button>
-            <button @click="$store.globalData.removeConcern($store.dropdownMenu.row); $store.dropdownMenu.close()">
-                Delete Concern
-            </button>
-        </div>
-    </template>
-    <template x-if="$store.dropdownMenu.type === 'td'">
-        <div>
-            <button @click="$store.globalData.openEditModal($store.dropdownMenu.row.obj, 'category'); $store.dropdownMenu.close()">
-                Edit
-            </button>
-            <button
-                    x-init="console.log('isParent?', $store.dropdownMenu.row?.isParent)"
-                    x-show="$store.dropdownMenu.row && $store.dropdownMenu.row.isParent"
-                    @click="$store.globalData.addSubcategory($store.dropdownMenu.row.obj); $store.dropdownMenu.close()">
-                +
-                Subcat
-            </button>
-            <button
-                    x-show="$store.dropdownMenu.row && $store.dropdownMenu.row.isParent"
-                    @click="$store.globalData.removeParentCategory($store.dropdownMenu.row.obj); $store.dropdownMenu.close()">
-                Delete Cat
-            </button>
-            <button
-                    x-show="$store.dropdownMenu.row && !$store.dropdownMenu.row.isParent"
-                    @click="$store.globalData.removeSubcategory($store.dropdownMenu.row.obj); $store.dropdownMenu.close()">
-                Delete Subcat
-            </button>
-        </div>
-    </template>
-
-    <template x-if="$store.dropdownMenu.type === 'main'">
-        <div>
-            <button @click="$store.globalData.addParentCategory(); $store.dropdownMenu.close()">+ Kategorien hinzufügen</button>
-            <button @click="$store.globalData.addConcern(); $store.dropdownMenu.close()">+ Intention hinzufügen</button>
-        </div>
-    </template>
-</div>
 
 
 <template x-if="$store.globalData.showDebugModal">
@@ -675,18 +673,14 @@
                 </button>
             </div>
             <pre class="text-xs whitespace-pre-wrap">
-    MATRIX: <span x-text="JSON.stringify($store.globalData.matrix, null, 2)"></span>
+                MATRIX: <span x-text="JSON.stringify($store.globalData.matrix, null, 2)"></span>
 
-    CATEGORIES: <span x-text="JSON.stringify($store.globalData.categories, null, 2)"></span>
+                CATEGORIES: <span x-text="JSON.stringify($store.globalData.categories, null, 2)"></span>
 
-    CONCERNS: <span x-text="JSON.stringify($store.globalData.concerns, null, 2)"></span>
+                CONCERNS: <span x-text="JSON.stringify($store.globalData.concerns, null, 2)"></span>
 
-    ROUTINGS: <span x-text="JSON.stringify($store.globalData.targets, null, 2)"></span>
-
-    SELECTED: <span x-text="$store.globalData.selectedTargetId"></span> =>
-      <span x-text="JSON.stringify($store.globalData.selectedTarget, null, 2)"></span>
+                ROUTINGS: <span x-text="JSON.stringify($store.globalData.targets, null, 2)"></span>
           </pre>
         </div>
     </div>
 </template>
-

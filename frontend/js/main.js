@@ -10,8 +10,8 @@ import '../css/styles.css';
 import { infoAgentModule } from "../pages/info_agent/info_agent.js";
 import { faqModule } from "../pages/faq/faq.js";
 import { basicMissionsModule} from "../pages/basic_missions/basic_missions.js";
-
-
+import { matrixModule } from "../pages/matrix/matrix.js";
+import { deploymentModule } from "../pages/deployment/deployment.js";
 const architectApi = new platformClient.ArchitectApi();
 
 
@@ -25,6 +25,23 @@ document.addEventListener('alpine:init', () => {
     Alpine.data("infoAgentModule", infoAgentModule);
     Alpine.data("faqModule", faqModule);
     Alpine.data("basicMissionsModule", basicMissionsModule);
+    Alpine.data("matrixModule", matrixModule);
+    Alpine.data("deploymentModule", deploymentModule);
+
+    window.addEventListener("keydown", (e) => {
+    const ctrlOrCmd = e.ctrlKey || e.metaKey;
+        // Toggle mit Ctrl/Cmd + Shift + P
+        if (ctrlOrCmd && e.shiftKey && e.code === "KeyS") {
+            e.preventDefault();
+            Alpine.store("globalData").controlPanelVisible = 
+            !Alpine.store("globalData").controlPanelVisible;
+        }
+
+        // Schließen mit Escape
+        if (e.code === "Escape") {
+            Alpine.store("globalData").controlPanelVisible = false;
+        }
+    });
 
     window.Alpine.store('genesys', {
         client: platformClient.ApiClient.instance,
@@ -39,6 +56,7 @@ document.addEventListener('alpine:init', () => {
         mouseY: null,
         leaveTimeout: null,
         // ----- DATA STORE (like defmoApp) -----
+        controlPanelVisible: false,
         showDebug: false,
         compactMode: false,
         showDebugModal: false,
@@ -46,7 +64,7 @@ document.addEventListener('alpine:init', () => {
         openAIModal: false,
         AIGenService: null,
 
-        meta: { businessContext: "" },
+        meta: { version: 0, businessContext: "" },
         categories: [],
         concerns: [],
         targets: {},
@@ -78,33 +96,14 @@ document.addEventListener('alpine:init', () => {
             flowId: "3225de50-1e9b-4103-85d0-cafe95f4a11f",
             helper: genesys,
         },
-        /*
-        typeColors: {
-            queue: 'bg-amber-100  text-amber-800',
-            generic: 'bg-amber-100  text-amber-800',
-            article: 'bg-teal-100 text-teal-800',
-            diy: 'bg-sky-100    text-sky-800',
-            guide: 'bg-lime-100 text-lime-800',
-            info_agent: 'bg-emerald-100 text-emerald-800',
-            default: 'bg-gray-100 text-gray-700',
-        },*/
-        typeColors: {
-            target: 'bg-gray-100 text-gray-700',   // bewusst neutral gehalten
-            generic: 'bg-[#FFBF7F] text-black',    // sanftes Pastell-Orange
-            guide: 'bg-[#BCB550] text-black',      // Olivgrün, wie gewünscht
-            article: 'bg-[#F2FEDC] text-black',        // sehr helles Grün, freundlich
-            info_agent: 'bg-[#BCB550] text-black', // gleiche Farbe wie guide
-            basic_mission: 'bg-[#FFFDBF] text-black',
-            diy: 'bg-[#FDC5A5] text-black',        // leichtes Pastell-Korall
-            default: 'bg-gray-100 text-gray-700',  // neutrales Grau
-        },
+        
         resources: {},
 
         // todo hard coded values need to be dynamic?
         client_id: "be3addac-a274-47b2-b382-86588cbba3e3",
         datatable_id: "0de34a0f-a83b-4b44-94c8-e94c8da5f4d6",
         content_workspace_id: "017fae6e-99c6-4733-b885-7fef4398c037",
-        version: 'main',
+        version: 'draft',
         info_agents_knowledge_endpoint: "https://d6id4rhutb6fpeqtyrygqr63aa0pxgwk.lambda-url.eu-central-1.on.aws/",
 
         data: null,
@@ -155,218 +154,6 @@ document.addEventListener('alpine:init', () => {
         selectedTargetId: null,
         get selectedTarget() {
             return Alpine.store("globalData").selectedTargetId ? Alpine.store("globalData").targets[Alpine.store("globalData").selectedTargetId] : null;
-        },
-        get flattenedCategories() {
-            const rows = [];
-            for (let cat of Alpine.store("globalData").categories) {
-                rows.push({
-                    isParent: true,
-                    obj: cat
-                });
-                if (cat.subcategories?.length) {
-                    for (let sub of cat.subcategories) {
-                        rows.push({
-                            isParent: false,
-                            obj: sub
-                        });
-                    }
-                }
-            }
-            return rows;
-        },
-        cellClasses(catId, conId) {
-            const sel = Alpine.store("globalData").matrixGet(catId, conId);
-            const colors = Alpine.store("globalData").typeColors || {};
-
-            // Neues Schema: Route
-            if (sel.type === 'route' && sel.value && Array.isArray(sel.value.modules)) {
-                for (const mod of sel.value.modules) {
-                    const type = mod?.type;
-                    if (type && colors[type]) return colors[type];
-                }
-                return colors.default; // kein bekanntes Modul gefunden
-            }
-
-            // Nicht-Route: direkter Typ-Farblookup
-            return (sel.type && colors[sel.type]) ? colors[sel.type] : '';
-        },
-        matrixGet(catId, conId) {
-            if (!Alpine.store("globalData").matrix[catId]) return '';
-            return Alpine.store("globalData").matrix[catId][conId] ?? '';
-        },
-        matrixSet(catId, conId, val) {
-            if (!Alpine.store("globalData").matrix[catId]) {
-                Alpine.store("globalData").matrix[catId] = {};
-            }
-            Alpine.store("globalData").matrix[catId][conId] = val;
-        },
-        matrixUnset(catId, conId) {
-            if (Alpine.store("globalData").matrix[catId]) {
-                delete Alpine.store("globalData").matrix[catId][conId];
-            }
-
-            const key = catId + '_' + conId;
-            if (Alpine.store("globalData").dropdowns[key]) {
-                Alpine.store("globalData").dropdowns[key].selected = null;
-            }
-        },
-        // Category / Concern modal editing
-        editType: null, // 'category' or 'concern'
-        editItem: null, // holds the object being edited
-        openEditModal(item, type) {
-            Alpine.store("globalData").editItem = item;
-            Alpine.store("globalData").editType = type;
-
-            if (item.name?.startsWith('*')) {
-                Alpine.store("globalData").editItem.name = item.name.replace(/^\*\s*/, '');
-            }
-        },
-        closeEditModal(confirmApply) {
-            const kws = Alpine.store("globalData").editItem?.keywords || [];
-            const phr = Alpine.store("globalData").editItem?.phrases || [];
-
-            const hasUnconfirmed = kws.some(k => k.startsWith('*')) || phr.some(p => p.startsWith('*'));
-
-            if (hasUnconfirmed && confirmApply !== undefined) {
-                if (confirmApply) {
-                    // Übernehmen: * entfernen
-                    Alpine.store("globalData").editItem.keywords = kws.map(k => k.startsWith('*') ? k.replace(/^\*\s*/, '') : k);
-                    Alpine.store("globalData").editItem.phrases = phr.map(p => p.startsWith('*') ? p.replace(/^\*\s*/, '') : p);
-                } else {
-                    // Verwerfen: mit * entfernen
-                    Alpine.store("globalData").editItem.keywords = kws.filter(k => !k.startsWith('*'));
-                    Alpine.store("globalData").editItem.phrases = phr.filter(p => !p.startsWith('*'));
-                }
-            }
-
-            Alpine.store("globalData").editItem = null;
-            Alpine.store("globalData").editType = null;
-        },
-
-        //////////////////////////////////
-        // START Route Modal
-        //////////////////////////////////
-        // State (Beispiel)
-route: {
-    open: false,
-    cell: null,
-    selectedIndex: null,
-
-    // Draft hält nur lowercase type + optional value (keine Namenskopie)
-    draft: {
-        name: 'Neue Route',
-        modules: [{ type: 'disconnect' }], // letzter Eintrag ist das End-Modul
-    }
-},
-
-resolveRouteTypeToLabel(type) {
-	if (!type) return '—';
-	// Alle Gruppen (inkl. simple) laden; Signatur bleibt unverändert
-	const groups = this.groupedOptions(); // ohne Filter => alle Gruppen
-
-	for (const g of groups) {
-		if (Array.isArray(g.items)) {
-			// datengetriebene Gruppe: alle Items teilen denselben value.type
-			const first = g.items[0];
-			if (first?.value?.type === type) return g.group;
-		} else if (g?.items?.value?.type === type) {
-			// simple Gruppe (items ist ein einzelnes Objekt)
-			return g.group;
-		}
-	}
-	// Fallback: unbekannter Typ
-	return type;
-},
-
-openRouteModal(categoryId, concernId, categoryName, concernName) {
-  this.route.open = true;
-  this.route.cell = { categoryId, concernId, categoryName, concernName };
-
-  const existing = this.matrixGet(categoryId, concernId);
-  if (existing && existing.type === 'route' && existing.value) {
-    this.route.draft = JSON.parse(JSON.stringify(existing.value)); // { name, modules:[{type,value}, ...] }
-  } else {
-    this.route.draft = {
-      name: 'Neue Route',
-      modules: [
-        // optional: ein Mid-Start lassen wir weg; End ist Disconnect
-        { type: 'disconnect' } // End (immer letzter Eintrag)
-      ],
-    };
-  }
-
-  // Auswahl: erstes Mid-Element (falls vorhanden), sonst End
-  this.route.selectedIndex = this.route.draft.modules.length > 1 ? 0 : (this.route.draft.modules.length - 1);
-},
-
-saveRouteModal() {
-  if (!this.route.cell) return;
-  const { categoryId, concernId } = this.route.cell;
-
-  this.matrixSet(categoryId, concernId, {
-    type: 'route',
-    value: JSON.parse(JSON.stringify(this.route.draft)),
-  });
-
-  this.closeRouteModal();
-},
-
-closeRouteModal() {
-  this.route.open = false;
-  this.route.cell = null;
-  this.route.selectedIndex = null;
-  this.route.draft = { name: 'Neue Route', modules: [{ type: 'Disconnect' }] };
-},
-
-        //////////////////////////////////
-        // END Route Modal
-        //////////////////////////////////
-
-
-        // Concern functions
-        addConcern(name = "*New Concern") {
-            Alpine.store("globalData").concerns.unshift({
-                id: crypto.randomUUID(),
-                name: name,
-                keywords: [],
-                phrases: []
-            });
-        },
-        removeConcern(con) {
-            Alpine.store("globalData").concerns = Alpine.store("globalData").concerns.filter(x => x.id !== con.id);
-            for (const catId in Alpine.store("globalData").matrix) {
-                delete Alpine.store("globalData").matrix[catId][con.id];
-            }
-        },
-        // Category / Subcategory functions
-        addParentCategory(name = "*New Category") {
-            Alpine.store("globalData").categories.unshift({
-                id: crypto.randomUUID(),
-                name: name,
-                keywords: [],
-                phrases: [],
-                subcategories: []
-            });
-        },
-        removeParentCategory(catObj) {
-            Alpine.store("globalData").categories = Alpine.store("globalData").categories.filter(c => c.id !== catObj.id);
-            delete Alpine.store("globalData").matrix[catObj.id];
-        },
-        addSubcategory(catObj, name = "*New Sub Category") {
-            if (!Array.isArray(catObj.subcategories)) {
-                catObj.subcategories = [];
-            }
-            catObj.subcategories.push({id: crypto.randomUUID(), name: name, keywords: [], phrases: []});
-        },
-        removeSubcategory(subObj) {
-            for (let cat of Alpine.store("globalData").categories) {
-                const idx = cat.subcategories.findIndex(s => s.id === subObj.id);
-                if (idx >= 0) {
-                    cat.subcategories.splice(idx, 1);
-                    delete Alpine.store("globalData").matrix[subObj.id];
-                    return;
-                }
-            }
         },
 
         addNewInfoAgent() {
@@ -419,7 +206,42 @@ closeRouteModal() {
         newAnswer() {
             return {keywords: [], Type: 'article', Legitimation: false, Target: [{}]}
         },
+        // --- Version helpers & Save ---
+        bumpMinorVersion(ver) {
+            const parts = String(ver ?? '0.0').split('.');
+            const major = parseInt(parts[0], 10) || 0;
+            const minor = parseInt(parts[1], 10) || 0;
+            return `${major}.${minor + 1}`;
+        },
+        async save() {
+            try {
+                // 1) bump draft minor version (+ update lastChange)
+                const meta = this.meta || {};
+                const deployment = meta.deployment || {};
+                const configs = deployment.configs || {};
+                if (configs.draft) {
+                    const current = configs.draft.version ?? '0.0';
+                    const next = this.bumpMinorVersion(current);
+                    configs.draft.version = next;
+                    configs.draft.lastChange = new Date().toISOString();
+                }
 
+                // 2) persist configuration to Genesys
+                await this.genesys.helper.syncConfigurationToGenesys(this.datatable_id, this.version);
+
+                // 3) feedback
+                const v = configs?.draft?.version ?? '';
+                window.Alpine.store('toast').show(`Konfiguration gespeichert${v ? ` (Draft v${v})` : ''}.`, 'success');
+            } catch (err) {
+                console.error('Save error:', err);
+                window.Alpine.store('toast').show('Speichern fehlgeschlagen.', 'error');
+            }
+        },
+        flatOptions(includedGroups = []) {
+            return Alpine.store("globalData")
+                .groupedOptions(includedGroups)
+                .flatMap(g => Array.isArray(g.items) ? g.items : [g.items]);
+        },
         labelForSelection(target) {
             if (!target) return '';
             else if (target.type == 'route') 
@@ -430,48 +252,11 @@ closeRouteModal() {
             return hit ? hit.label : '';
             
         },
-        labelForMatrixSelection(catId, conId) {
-            const sel = Alpine.store("globalData").matrixGet(catId, conId);
-            return Alpine.store("globalData").labelForSelection(sel)
-        },
+
         isSelected(target, val) {
             return target && target.type === val.type && target.value === val.value;
         },
-        isSelectedMatrix(catId, conId, val) {
-            const sel = Alpine.store("globalData").matrixGet(catId, conId);
-            return Alpine.store("globalData").isSelected(sel, val);
-        },
-        answerQuickSet(target) {
-            if (Alpine.store("globalData").activeTab === 'targets' && Alpine.store("globalData").selectedTarget) {
-                target = {
-                    type: Alpine.store("globalData").selectedTarget.type,
-                    value: Alpine.store("globalData").selectedTarget.id
-                };
-            } else if (Alpine.store("globalData").activeTab === 'articles' && Alpine.store("globalData").selectedArticle) {
-                target = {
-                    type: 'article',
-                    value: Alpine.store("globalData").selectedArticle.id
-                };
-            }
-            console.log("Target: " + JSON.stringify(target))
-        },
-        // todo Matrix options maybe rework with other module
-        // Question Target read/write
-        getQuestionTarget(target) {
-            if (!Alpine.store("globalData").matrix[catId]) return '';
-            return Alpine.store("globalData").matrix[catId][conId] ?? '';
-        },
-        setQuestionTarget(target) {
-            if (!Alpine.store("globalData").matrix[catId]) {
-                Alpine.store("globalData").matrix[catId] = {};
-            }
-            Alpine.store("globalData").matrix[catId][conId] = val;
-        },
-        flatOptions(includedGroups = []) {
-            return Alpine.store("globalData")
-                .groupedOptions(includedGroups)
-                .flatMap(g => Array.isArray(g.items) ? g.items : [g.items]);
-        },
+
         // Provide grouped list for the dropdown
         groupedOptions(includedGroups = []) {
             // --- Simple Module als eigene Gruppen (items = Objekt) ---
@@ -599,8 +384,8 @@ closeRouteModal() {
                 }
 
                 // Modal nur beim ersten passenden Command öffnen
-                if (!this.editItem && ['generate_keywords', 'generate_phrases'].includes(cmd)) {
-                    this.openEditModal(currentTarget, this.concerns.includes(currentTarget) ? 'concern' : 'category')
+                if (!Alpine.store("matrixModule").editItem && ['generate_keywords', 'generate_phrases'].includes(cmd)) {
+                    Alpine.store("matrixModule").openEditModal(currentTarget, this.concerns.includes(currentTarget) ? 'concern' : 'category')
                 }
 
                 try {
@@ -630,19 +415,19 @@ closeRouteModal() {
 
                         case 'generate_categories':
                             if (Array.isArray(res)) {
-                                res.forEach(name => this.addParentCategory("*" + name));
+                                res.forEach(name => Alpine.store("matrixModule").addParentCategory("*" + name));
                             }
                             break;
 
                         case 'generate_concerns':
                             if (Array.isArray(res)) {
-                                res.forEach(name => this.addConcern("*" + name));
+                                res.forEach(name => Alpine.store("matrixModule").addConcern("*" + name));
                             }
                             break;
 
                         case 'generate_subcategories':
                             if (currentTarget && Array.isArray(res)) {
-                                res.forEach(name => this.addSubcategory(currentTarget, "*" + name));
+                                res.forEach(name => Alpine.store("matrixModule").addSubcategory(currentTarget, "*" + name));
                             }
                             break;
 
@@ -750,7 +535,7 @@ closeRouteModal() {
                             genesys.fetchQueuesFromGenesys().then(() => {
                                 console.log("Got Queues.")
                             })
-                            genesys.getConfigurationDataFromGenesys(datatable_id, "main").then(() => {
+                            genesys.getConfigurationDataFromGenesys(datatable_id, window.Alpine.store("globalData").version).then(() => {
                                 console.log("Got Main Config.")
                                 if (Object.keys( Alpine.store("globalData").matrix).length === 0)  Alpine.store("setupWizard").visible = true;
                             })
